@@ -26,11 +26,11 @@ export interface RefreshTokenResponse {
 }
 
 export interface User {
-  id: string;
+  id?: string;
   email: string;
   name: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Tipos para configuração da API

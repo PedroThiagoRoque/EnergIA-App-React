@@ -254,6 +254,8 @@ export async function logoutUser(): Promise<boolean> {
  * Obter dados do usuário
  */
 export async function getUserData(): Promise<any> {
+  console.log('👤 [USER] Obtendo dados do usuário...');
+  
   try {
     const response = await fetch('https://chatenergia.com.br/dashboard', {
       method: 'GET',
@@ -261,15 +263,70 @@ export async function getUserData(): Promise<any> {
     });
 
     if (response.ok) {
+      const html = await response.text();
+      console.log('📄 [USER] HTML obtido, tamanho:', html.length);
+      
+      // Extrair nome do usuário do HTML
+      const userName = extractUserName(html);
+      console.log('👤 [USER] Nome extraído:', userName);
+
       return {
-        name: 'Usuário EnergIA',
-        email: 'usuario@energia.com',
+        name: userName || 'Usuário EnergIA',
+        email: '', // Email não está disponível no HTML da dashboard
       };
     }
 
+    console.log('❌ [USER] Falha ao acessar dashboard:', response.status);
     return null;
   } catch (error) {
-    console.error('Erro ao obter dados:', error);
+    console.error('💥 [USER] Erro ao obter dados:', error);
+    return null;
+  }
+}
+
+/**
+ * Extrair nome do usuário do HTML da dashboard
+ */
+function extractUserName(html: string): string | null {
+  console.log('🔍 [EXTRACT] Extraindo nome do usuário...');
+  
+  try {
+    // Padrão 1: Procurar por "Olá, [Nome]!" no HTML
+    const greetingPattern = /Olá,\s*<br><h3>\s*([^<]+)!/i;
+    let match = html.match(greetingPattern);
+    
+    if (match && match[1]) {
+      const name = match[1].trim();
+      console.log('✅ [EXTRACT] Nome encontrado via padrão de saudação:', name);
+      return name;
+    }
+
+    // Padrão 2: Procurar por estrutura HTML mais flexível
+    const flexiblePattern = /Olá,.*?<h3[^>]*>\s*([^<]+)\s*<\/h3>/is;
+    match = html.match(flexiblePattern);
+    
+    if (match && match[1]) {
+      const name = match[1].trim().replace(/!$/, ''); // Remove exclamação se houver
+      console.log('✅ [EXTRACT] Nome encontrado via padrão flexível:', name);
+      return name;
+    }
+
+    // Padrão 3: Procurar por qualquer texto após "Olá"
+    const simplePattern = /Olá,?\s*([^<\n!]+)/i;
+    match = html.match(simplePattern);
+    
+    if (match && match[1]) {
+      const name = match[1].trim();
+      console.log('✅ [EXTRACT] Nome encontrado via padrão simples:', name);
+      return name;
+    }
+
+    console.log('❌ [EXTRACT] Nome não encontrado em nenhum padrão');
+    console.log('🔍 [EXTRACT] Amostra do HTML para debug:', html.substring(0, 1000));
+    
+    return null;
+  } catch (error) {
+    console.error('💥 [EXTRACT] Erro na extração:', error);
     return null;
   }
 }
