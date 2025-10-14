@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useLoginValidation } from '../../lib/auth/useAuth';
 import { router } from 'expo-router';
-import { testApiConnection, loginUserAlternative, validateCredentials } from '../../lib/api/energia-simple';
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -48,20 +48,12 @@ export default function LoginScreen() {
       const errorMessage = error instanceof Error ? error.message : 'Erro no login';
       console.error('💥 LoginScreen: Erro no login unificado:', errorMessage);
       
-      // Mostrar erro mais amigável com opções úteis
+      // Mostrar erro mais amigável
       Alert.alert(
         'Login não realizado', 
-        `${errorMessage}\n\nPossíveis soluções:\n• Verifique email e senha\n• Teste a conexão com servidor\n• Use validação manual`,
+        `${errorMessage}\n\nPor favor, verifique suas credenciais e tente novamente.`,
         [
-          { text: 'Tentar Novamente' },
-          { 
-            text: 'Testar Servidor',
-            onPress: handleTestConnection
-          },
-          {
-            text: 'Debug',
-            onPress: fillTestCredentials
-          }
+          { text: 'OK' }
         ]
       );
     }
@@ -83,94 +75,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleTestConnection = async () => {
-    console.log('🔧 LoginScreen: Testando conexão com API...');
-    try {
-      const result = await testApiConnection();
-      Alert.alert(
-        'Teste de Conectividade',
-        result.message,
-        [{ text: 'OK' }],
-        { cancelable: false }
-      );
-    } catch (error) {
-      Alert.alert(
-        'Erro no Teste',
-        'Não foi possível testar a conexão',
-        [{ text: 'OK' }],
-        { cancelable: false }
-      );
-    }
-  };
 
-  const handleDebugLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Erro', 'Digite email e senha para testar');
-      return;
-    }
-
-    console.log('🧪 LoginScreen: Validando credenciais...');
-    try {
-      const result = await validateCredentials({ email: email.trim(), password });
-      
-      Alert.alert(
-        'Validação de Credenciais', 
-        result.details,
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert(
-        'Erro no Teste',
-        'Erro de conexão. Verifique sua internet.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  const fillTestCredentials = () => {
-    Alert.alert(
-      'Ajuda e Debug',
-      `Status atual:
-${email ? '✅' : '❌'} Email preenchido
-${password ? '✅' : '❌'} Senha preenchida
-
-Como usar:
-1. Preencha suas credenciais reais
-2. Clique "Entrar" (faz validação automaticamente)
-
-Problemas comuns:
-- Credenciais incorretas
-- Servidor offline
-- Conexão instável`,
-      [
-        { text: 'Fechar', style: 'cancel' },
-        { 
-          text: 'Validar Apenas',
-          onPress: handleDebugLogin
-        },
-        { 
-          text: 'Simular Login',
-          onPress: () => {
-            Alert.alert(
-              'Simular Login?',
-              'Isso vai simular um login bem-sucedido para testar o app. Use apenas para desenvolvimento.',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Simular',
-                  onPress: () => {
-                    console.log('🎭 Simulando login bem-sucedido...');
-                    // Simular dados de usuário
-                    router.replace('/(tabs)');
-                  }
-                }
-              ]
-            );
-          }
-        }
-      ]
-    );
-  };
 
 
 
@@ -253,7 +158,7 @@ Problemas comuns:
               )}
             </View>
 
-            {/* Unified Login Button - Validates and Logs In */}
+            {/* Login Button */}
             <TouchableOpacity
               style={[
                 styles.loginButton,
@@ -272,24 +177,7 @@ Problemas comuns:
               )}
             </TouchableOpacity>
 
-            {/* Debug Buttons */}
-            <View style={styles.testButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.testButton, { flex: 1, marginRight: 8 }]}
-                onPress={handleTestConnection}
-                disabled={isLoading}
-              >
-                <Text style={styles.testButtonText}>Testar Servidor</Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.testButton, { flex: 1, marginLeft: 8 }]}
-                onPress={fillTestCredentials}
-                disabled={isLoading}
-              >
-                <Text style={styles.testButtonText}>Ajuda/Debug</Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
@@ -416,23 +304,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  testButtonsContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
-  testButton: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#D1D5DB',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  testButtonText: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontWeight: '500',
-  },
+
   footer: {
     alignItems: 'center',
     marginTop: 24,
