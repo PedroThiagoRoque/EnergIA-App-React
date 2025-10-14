@@ -373,3 +373,51 @@ export async function getUserData(): Promise<any> {
     return null;
   }
 }
+
+// Interfaces para o Chat
+export interface ChatMessage {
+  message: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  assistantType: string;
+}
+
+/**
+ * Enviar mensagem para o chat da IA
+ */
+export async function sendChatMessage(message: string): Promise<ChatResponse> {
+  console.log('💬 Enviando mensagem para o chat:', message);
+
+  try {
+    const response = await fetch('https://chatenergia.com.br/chat/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+      credentials: 'include', // Importante para autenticação
+    });
+
+    console.log('📥 Resposta do chat:', {
+      status: response.status,
+      statusText: response.statusText
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      throw new Error(`Erro na API: ${response.status} - ${response.statusText}`);
+    }
+
+    const data: ChatResponse = await response.json();
+    console.log('✅ Resposta do chat recebida:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('💥 Erro ao enviar mensagem para o chat:', error);
+    throw error instanceof Error ? error : new Error('Erro de conexão');
+  }
+}
