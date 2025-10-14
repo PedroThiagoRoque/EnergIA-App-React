@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { router } from 'expo-router';
-import { loginUser, loginUserAlternative, checkAuth, logoutUser, getUserData } from '../api/energia-simple';
+import { loginUser, loginUserAlternative, loginUserSimple, checkAuth, logoutUser, getUserData } from '../api/energia-simple';
 import type {
   User,
   LoginRequest,
@@ -59,15 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Login
+  // Login com validação integrada
   const login = useCallback(async (credentials: LoginRequest) => {
-    console.log('🚀 useAuth: Iniciando processo de login...');
+    console.log('🚀 useAuth: Iniciando processo de login unificado...');
     
     try {
       setIsLoading(true);
       setError(null);
 
-      // Validação básica
+      // 1. Validação básica de formato
       if (!credentials.email || !credentials.password) {
         console.log('❌ useAuth: Credenciais vazias');
         throw new Error('Email e senha são obrigatórios');
@@ -78,24 +78,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Formato de email inválido');
       }
 
-      console.log('✅ useAuth: Credenciais válidas, fazendo login...');
+      if (credentials.password.length < 3) {
+        console.log('❌ useAuth: Senha muito curta');
+        throw new Error('Senha deve ter pelo menos 3 caracteres');
+      }
 
-      // Fazer login
-      const response = await loginUser({
-        email: credentials.email,
+      console.log('✅ useAuth: Validação de formato OK, iniciando login...');
+
+      // 2. Estratégia de login em cascata (do mais simples ao mais complexo)
+      console.log('🎯 useAuth: Tentando login simples e direto...');
+      let response = await loginUserSimple({
+        email: credentials.email.trim(),
         password: credentials.password
       });
 
-      console.log('📥 useAuth: Resposta da API:', response);
+      // Se falhar, tentar método alternativo
+      if (!response.success) {
+        console.log('🔄 useAuth: Login simples falhou, tentando método alternativo...');
+        response = await loginUserAlternative({
+          email: credentials.email.trim(),
+          password: credentials.password
+        });
+      }
+
+      // Se ainda falhar, tentar método completo
+      if (!response.success) {
+        console.log('⚠️ useAuth: Métodos anteriores falharam, tentando método completo...');
+        response = await loginUser({
+          email: credentials.email.trim(),
+          password: credentials.password
+        });
+      }
+
+      console.log('📥 useAuth: Resposta final da API:', response);
 
       if (!response.success) {
-        console.log('❌ useAuth: Login falhou');
-        throw new Error('Email ou senha inválidos. Verifique suas credenciais.');
+        console.log('❌ useAuth: Todos os métodos de login falharam');
+        throw new Error('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
       }
 
       console.log('✅ useAuth: Login bem-sucedido, buscando dados do usuário...');
 
-      // Buscar dados do usuário após login
+      // 3. Buscar dados do usuário após login
       const userData = await getUserData();
       
       console.log('👤 useAuth: Dados do usuário obtidos:', userData);
@@ -117,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     } finally {
       setIsLoading(false);
-      console.log('🏁 useAuth: Processo de login finalizado');
+      console.log('🏁 useAuth: Processo de login unificado finalizado');
     }
   }, []);
 

@@ -25,28 +25,45 @@ export default function LoginScreen() {
   const { errors, validateForm, clearErrors } = useLoginValidation();
 
   const handleLogin = async () => {
-    console.log('🎯 LoginScreen: Botão de login pressionado');
+    console.log('🎯 LoginScreen: Botão ENTRAR pressionado - executando login unificado');
     
     // Limpar erros anteriores
     clearErrors();
 
-    // Validar formulário
+    // Validação básica do formulário (UI)
     if (!validateForm(email, password)) {
-      console.log('❌ LoginScreen: Validação do formulário falhou');
+      console.log('❌ LoginScreen: Validação básica do formulário falhou');
       return;
     }
 
-    console.log('✅ LoginScreen: Formulário válido, iniciando login...');
+    console.log('✅ LoginScreen: Validação básica OK, executando login completo...');
 
     try {
+      // O hook login agora faz TUDO: validação + autenticação + redirecionamento
       await login({ email: email.trim(), password });
-      console.log('🎉 LoginScreen: Login bem-sucedido!');
+      console.log('🎉 LoginScreen: Login unificado bem-sucedido!');
       // Sucesso - o hook já faz o redirecionamento
     } catch (error) {
       // O erro já está sendo tratado pelo hook
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('💥 LoginScreen: Erro no login:', errorMessage);
-      Alert.alert('Erro no Login', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : 'Erro no login';
+      console.error('💥 LoginScreen: Erro no login unificado:', errorMessage);
+      
+      // Mostrar erro mais amigável com opções úteis
+      Alert.alert(
+        'Login não realizado', 
+        `${errorMessage}\n\nPossíveis soluções:\n• Verifique email e senha\n• Teste a conexão com servidor\n• Use validação manual`,
+        [
+          { text: 'Tentar Novamente' },
+          { 
+            text: 'Testar Servidor',
+            onPress: handleTestConnection
+          },
+          {
+            text: 'Debug',
+            onPress: fillTestCredentials
+          }
+        ]
+      );
     }
   };
 
@@ -112,15 +129,14 @@ export default function LoginScreen() {
 
   const fillTestCredentials = () => {
     Alert.alert(
-      'Ajuda com Login',
+      'Ajuda e Debug',
       `Status atual:
 ${email ? '✅' : '❌'} Email preenchido
 ${password ? '✅' : '❌'} Senha preenchida
 
-Para testar:
+Como usar:
 1. Preencha suas credenciais reais
-2. Clique "Validar" para testar
-3. Se validar OK, clique "Entrar"
+2. Clique "Entrar" (faz validação automaticamente)
 
 Problemas comuns:
 - Credenciais incorretas
@@ -128,6 +144,10 @@ Problemas comuns:
 - Conexão instável`,
       [
         { text: 'Fechar', style: 'cancel' },
+        { 
+          text: 'Validar Apenas',
+          onPress: handleDebugLogin
+        },
         { 
           text: 'Simular Login',
           onPress: () => {
@@ -233,7 +253,7 @@ Problemas comuns:
               )}
             </View>
 
-            {/* Login Button */}
+            {/* Unified Login Button - Validates and Logs In */}
             <TouchableOpacity
               style={[
                 styles.loginButton,
@@ -245,37 +265,29 @@ Problemas comuns:
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator color="#FFFFFF" size="small" />
-                  <Text style={styles.loginButtonText}>Entrando...</Text>
+                  <Text style={styles.loginButtonText}>Conectando...</Text>
                 </View>
               ) : (
                 <Text style={styles.loginButtonText}>Entrar</Text>
               )}
             </TouchableOpacity>
 
-            {/* Test Buttons */}
+            {/* Debug Buttons */}
             <View style={styles.testButtonsContainer}>
               <TouchableOpacity
-                style={[styles.testButton, { flex: 1, marginRight: 4 }]}
+                style={[styles.testButton, { flex: 1, marginRight: 8 }]}
                 onPress={handleTestConnection}
                 disabled={isLoading}
               >
-                <Text style={styles.testButtonText}>Servidor</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.testButton, { flex: 1, marginHorizontal: 4 }]}
-                onPress={handleDebugLogin}
-                disabled={isLoading || !email || !password}
-              >
-                <Text style={styles.testButtonText}>Validar</Text>
+                <Text style={styles.testButtonText}>Testar Servidor</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.testButton, { flex: 1, marginLeft: 4 }]}
+                style={[styles.testButton, { flex: 1, marginLeft: 8 }]}
                 onPress={fillTestCredentials}
                 disabled={isLoading}
               >
-                <Text style={styles.testButtonText}>Ajuda</Text>
+                <Text style={styles.testButtonText}>Ajuda/Debug</Text>
               </TouchableOpacity>
             </View>
 

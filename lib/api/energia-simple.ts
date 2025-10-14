@@ -9,6 +9,67 @@ export interface LoginResponse {
 }
 
 /**
+ * Login simples e confiável - versão unificada
+ */
+export async function loginUserSimple(credentials: LoginCredentials): Promise<LoginResponse> {
+  console.log('🎯 [SIMPLE] Login direto para:', credentials.email);
+  
+  try {
+    // Usar URLSearchParams que é o método mais compatível
+    const params = new URLSearchParams();
+    params.append('email', credentials.email);
+    params.append('password', credentials.password);
+
+    const response = await fetch('https://chatenergia.com.br/login', {
+      method: 'POST',
+      body: params,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (compatible; EnergIA-App/1.0)'
+      },
+    });
+
+    console.log('📥 [SIMPLE] Response:', response.status, response.ok);
+
+    // Aguardar processamento
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Verificar se login foi bem-sucedido
+    const dashboardResponse = await fetch('https://chatenergia.com.br/dashboard', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (dashboardResponse.ok) {
+      const html = await dashboardResponse.text();
+      
+      // Múltiplas verificações para detectar se está logado
+      const hasPasswordField = html.includes('type="password"') || html.includes('name="password"');
+      const hasLoginForm = html.toLowerCase().includes('login') && hasPasswordField;
+      const hasLogout = html.toLowerCase().includes('logout') || html.toLowerCase().includes('sair');
+      const hasDashboard = html.toLowerCase().includes('dashboard') || html.toLowerCase().includes('bem-vindo');
+      
+      console.log('🔍 [SIMPLE] Análise:', { hasPasswordField, hasLoginForm, hasLogout, hasDashboard });
+      
+      // Se não tem formulário de login OU tem elementos de dashboard/logout, está logado
+      if (!hasLoginForm || hasLogout || hasDashboard) {
+        console.log('✅ [SIMPLE] Login bem-sucedido!');
+        return { success: true, redirect: '/dashboard' };
+      }
+    }
+
+    console.log('❌ [SIMPLE] Login falhou');
+    return { success: false };
+
+  } catch (error) {
+    console.error('💥 [SIMPLE] Erro:', error);
+    return { success: false };
+  }
+}
+
+/**
  * Login com diagnóstico completo
  */
 export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
