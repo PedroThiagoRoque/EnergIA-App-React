@@ -1,229 +1,146 @@
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { router } from 'expo-router';
-import { ApiClient } from '../api/axios';
-import { sessionManager } from './session';
+import { loginUser, loginUserAlternative, checkAuth, logoutUser, getUserData } from '../api/energia-simple';
 import type {
   User,
   LoginRequest,
-  LoginResponse,
   SessionState,
-  ApiResponse,
-  AuthTokens,
 } from '../types/auth';
 
-// Contexto de autenticação
-interface AuthContextType extends SessionState {
+// Contexto de autenticação simplificado
+interface AuthContextType {
+  isAuthenticated: boolean;
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // Provider de autenticação
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<SessionState>({
-    isAuthenticated: false,
-    user: null,
-    tokens: null,
-    isLoading: true,
-    error: null,
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const apiClient = new ApiClient({
-    baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://api.energia.com',
-    timeout: 10000,
-  });
-
-  // Verificar sessão existente ao inicializar
+  // Verificar autenticação ao inicializar
   const initializeAuth = useCallback(async () => {
+    console.log('🔄 useAuth: Inicializando autenticação...');
+    
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setIsLoading(true);
+      setError(null);
 
-      const accessToken = await sessionManager.getAccessToken();
-      if (!accessToken) {
-        setState(prev => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      // Verificar se o token não expirou
-      const isExpired = await sessionManager.isTokenExpired();
-      if (isExpired) {
-        // Tentar renovar o token
-        const newTokens = await sessionManager.refreshTokens(async (refreshToken) => {
-          const response = await apiClient.post<ApiResponse<{ tokens: AuthTokens }>>('/auth/refresh', {
-            refreshToken,
-          });
-          if (!response.success || !response.data?.data) {
-            throw new Error('Token refresh failed');
-          }
-          return response.data.data.tokens;
-        });
-        if (!newTokens) {
-          await sessionManager.clearSession();
-          setState(prev => ({ ...prev, isLoading: false }));
-          return;
-        }
-      }
-
-      // Buscar dados do usuário
-      const response = await apiClient.get<User>('/auth/me');
+      const isAuth = await checkAuth();
+      console.log('🔍 useAuth: Status de autenticação:', isAuth);
       
-      if (response.success && response.data) {
-        const tokens = await sessionManager.getTokens();
-        setState({
-          isAuthenticated: true,
-          user: response.data,
-          tokens,
-          isLoading: false,
-          error: null,
-        });
+      if (isAuth) {
+        console.log('✅ useAuth: Usuário autenticado, buscando dados...');
+        const userData = await getUserData();
+        setIsAuthenticated(true);
+        setUser(userData || { name: 'Usuário', email: '' });
+        console.log('✅ useAuth: Autenticação inicializada com sucesso');
       } else {
-        await sessionManager.clearSession();
-        setState(prev => ({ ...prev, isLoading: false }));
+        console.log('❌ useAuth: Usuário não autenticado');
+        setIsAuthenticated(false);
+        setUser(null);
       }
     } catch (error) {
-      console.error('Failed to initialize auth:', error);
-      await sessionManager.clearSession();
-      setState({
-        isAuthenticated: false,
-        user: null,
-        tokens: null,
-        isLoading: false,
-        error: 'Failed to initialize authentication',
-      });
+      console.error('💥 useAuth: Falha ao inicializar auth:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+      setError('Erro ao verificar autenticação');
+    } finally {
+      setIsLoading(false);
+      console.log('🏁 useAuth: Inicialização finalizada');
     }
-  }, [apiClient]);
+  }, []);
 
   // Login
   const login = useCallback(async (credentials: LoginRequest) => {
+    console.log('🚀 useAuth: Iniciando processo de login...');
+    
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setIsLoading(true);
+      setError(null);
 
       // Validação básica
       if (!credentials.email || !credentials.password) {
-        throw new Error('Email and password are required');
+        console.log('❌ useAuth: Credenciais vazias');
+        throw new Error('Email e senha são obrigatórios');
       }
 
       if (!isValidEmail(credentials.email)) {
-        throw new Error('Invalid email format');
+        console.log('❌ useAuth: Email inválido:', credentials.email);
+        throw new Error('Formato de email inválido');
       }
 
-      // Fazer login na API
-      const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+      console.log('✅ useAuth: Credenciais válidas, fazendo login...');
 
-      if (!response.success || !response.data) {
-        throw new Error(response.message || 'Login failed');
+      // Fazer login
+      const response = await loginUser({
+        email: credentials.email,
+        password: credentials.password
+      });
+
+      console.log('📥 useAuth: Resposta da API:', response);
+
+      if (!response.success) {
+        console.log('❌ useAuth: Login falhou');
+        throw new Error('Email ou senha inválidos. Verifique suas credenciais.');
       }
 
-      const { user, tokens } = response.data;
+      console.log('✅ useAuth: Login bem-sucedido, buscando dados do usuário...');
 
-      // Armazenar tokens
-      await sessionManager.setTokens({
-        ...tokens,
-        expiresAt: Date.now() + (tokens.expiresIn || 3600) * 1000,
-      });
+      // Buscar dados do usuário após login
+      const userData = await getUserData();
+      
+      console.log('👤 useAuth: Dados do usuário obtidos:', userData);
+      
+      setIsAuthenticated(true);
+      setUser(userData || { name: 'Usuário', email: credentials.email });
+      setError(null);
 
-      // Atualizar estado
-      setState({
-        isAuthenticated: true,
-        user,
-        tokens,
-        isLoading: false,
-        error: null,
-      });
-
-      // Redirecionar para a tela principal
+      console.log('🎯 useAuth: Redirecionando para dashboard...');
+      // Redirecionar para dashboard
       router.replace('/(tabs)');
+      
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('Login error:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
+      const errorMessage = error instanceof Error ? error.message : 'Erro no login';
+      console.error('💥 useAuth: Erro no login:', error);
+      setError(errorMessage);
+      setIsAuthenticated(false);
+      setUser(null);
       throw error;
+    } finally {
+      setIsLoading(false);
+      console.log('🏁 useAuth: Processo de login finalizado');
     }
-  }, [apiClient]);
+  }, []);
 
   // Logout
   const logout = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      // Tentar fazer logout na API (não bloquear se falhar)
-      try {
-        await apiClient.post('/auth/logout');
-      } catch (error) {
-        console.warn('Failed to logout on server:', error);
-      }
-
-      // Limpar sessão local
-      await sessionManager.clearSession();
-
-      setState({
-        isAuthenticated: false,
-        user: null,
-        tokens: null,
-        isLoading: false,
-        error: null,
-      });
-
+      setIsLoading(true);
+      
+      // Tentar fazer logout na API
+      await logoutUser();
+    } catch (error) {
+      console.warn('Failed to logout on server:', error);
+    } finally {
+      // Sempre limpar estado local
+      setIsAuthenticated(false);
+      setUser(null);
+      setError(null);
+      setIsLoading(false);
+      
       // Redirecionar para login
       router.replace('/(auth)/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Mesmo se der erro, limpar o estado local
-      setState({
-        isAuthenticated: false,
-        user: null,
-        tokens: null,
-        isLoading: false,
-        error: null,
-      });
-      router.replace('/(auth)/login');
     }
-  }, [apiClient]);
-
-  // Renovar sessão
-  const refreshSession = useCallback(async () => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      const newTokens = await sessionManager.refreshTokens(async (refreshToken) => {
-        const response = await apiClient.post<ApiResponse<{ tokens: AuthTokens }>>('/auth/refresh', {
-          refreshToken,
-        });
-        if (!response.success || !response.data?.data) {
-          throw new Error('Token refresh failed');
-        }
-        return response.data.data.tokens;
-      });
-      
-      if (!newTokens) {
-        await logout();
-        return;
-      }
-
-      // Buscar dados atualizados do usuário
-      const response = await apiClient.get<User>('/auth/me');
-      
-      if (response.success && response.data) {
-        setState(prev => ({
-          ...prev,
-          user: response.data,
-          tokens: newTokens,
-          isLoading: false,
-        }));
-      } else {
-        await logout();
-      }
-    } catch (error) {
-      console.error('Refresh session error:', error);
-      await logout();
-    }
-  }, [apiClient, logout]);
+  }, []);
 
   // Inicializar autenticação ao montar o componente
   useEffect(() => {
@@ -231,10 +148,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [initializeAuth]);
 
   const contextValue: AuthContextType = {
-    ...state,
+    isAuthenticated,
+    user,
+    isLoading,
+    error,
     login,
     logout,
-    refreshSession,
   };
 
   return React.createElement(

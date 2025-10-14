@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useLoginValidation } from '../../lib/auth/useAuth';
+import { router } from 'expo-router';
+import { testApiConnection, loginUserAlternative, validateCredentials } from '../../lib/api/energia-simple';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -23,21 +25,28 @@ export default function LoginScreen() {
   const { errors, validateForm, clearErrors } = useLoginValidation();
 
   const handleLogin = async () => {
+    console.log('🎯 LoginScreen: Botão de login pressionado');
+    
     // Limpar erros anteriores
     clearErrors();
 
     // Validar formulário
     if (!validateForm(email, password)) {
+      console.log('❌ LoginScreen: Validação do formulário falhou');
       return;
     }
 
+    console.log('✅ LoginScreen: Formulário válido, iniciando login...');
+
     try {
       await login({ email: email.trim(), password });
+      console.log('🎉 LoginScreen: Login bem-sucedido!');
       // Sucesso - o hook já faz o redirecionamento
     } catch (error) {
       // O erro já está sendo tratado pelo hook
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      Alert.alert('Login Error', errorMessage);
+      console.error('💥 LoginScreen: Erro no login:', errorMessage);
+      Alert.alert('Erro no Login', errorMessage);
     }
   };
 
@@ -57,6 +66,94 @@ export default function LoginScreen() {
     }
   };
 
+  const handleTestConnection = async () => {
+    console.log('🔧 LoginScreen: Testando conexão com API...');
+    try {
+      const result = await testApiConnection();
+      Alert.alert(
+        'Teste de Conectividade',
+        result.message,
+        [{ text: 'OK' }],
+        { cancelable: false }
+      );
+    } catch (error) {
+      Alert.alert(
+        'Erro no Teste',
+        'Não foi possível testar a conexão',
+        [{ text: 'OK' }],
+        { cancelable: false }
+      );
+    }
+  };
+
+  const handleDebugLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Digite email e senha para testar');
+      return;
+    }
+
+    console.log('🧪 LoginScreen: Validando credenciais...');
+    try {
+      const result = await validateCredentials({ email: email.trim(), password });
+      
+      Alert.alert(
+        'Validação de Credenciais', 
+        result.details,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      Alert.alert(
+        'Erro no Teste',
+        'Erro de conexão. Verifique sua internet.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const fillTestCredentials = () => {
+    Alert.alert(
+      'Ajuda com Login',
+      `Status atual:
+${email ? '✅' : '❌'} Email preenchido
+${password ? '✅' : '❌'} Senha preenchida
+
+Para testar:
+1. Preencha suas credenciais reais
+2. Clique "Validar" para testar
+3. Se validar OK, clique "Entrar"
+
+Problemas comuns:
+- Credenciais incorretas
+- Servidor offline
+- Conexão instável`,
+      [
+        { text: 'Fechar', style: 'cancel' },
+        { 
+          text: 'Simular Login',
+          onPress: () => {
+            Alert.alert(
+              'Simular Login?',
+              'Isso vai simular um login bem-sucedido para testar o app. Use apenas para desenvolvimento.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Simular',
+                  onPress: () => {
+                    console.log('🎭 Simulando login bem-sucedido...');
+                    // Simular dados de usuário
+                    router.replace('/(tabs)');
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
+
+
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -71,7 +168,7 @@ export default function LoginScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>EnergIA</Text>
-              <Text style={styles.subtitle}>Sign in to your account</Text>
+              <Text style={styles.subtitle}>Faça login em sua conta</Text>
             </View>
 
             {/* Error Message */}
@@ -148,18 +245,45 @@ export default function LoginScreen() {
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator color="#FFFFFF" size="small" />
-                  <Text style={styles.loginButtonText}>Signing in...</Text>
+                  <Text style={styles.loginButtonText}>Entrando...</Text>
                 </View>
               ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
+                <Text style={styles.loginButtonText}>Entrar</Text>
               )}
             </TouchableOpacity>
+
+            {/* Test Buttons */}
+            <View style={styles.testButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.testButton, { flex: 1, marginRight: 4 }]}
+                onPress={handleTestConnection}
+                disabled={isLoading}
+              >
+                <Text style={styles.testButtonText}>Servidor</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.testButton, { flex: 1, marginHorizontal: 4 }]}
+                onPress={handleDebugLogin}
+                disabled={isLoading || !email || !password}
+              >
+                <Text style={styles.testButtonText}>Validar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.testButton, { flex: 1, marginLeft: 4 }]}
+                onPress={fillTestCredentials}
+                disabled={isLoading}
+              >
+                <Text style={styles.testButtonText}>Ajuda</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Don't have an account?{' '}
-                <Text style={styles.footerLink}>Contact support</Text>
+                Problemas para entrar?{' '}
+                <Text style={styles.footerLink}>Verifique sua conexão</Text>
               </Text>
             </View>
           </View>
@@ -279,6 +403,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  testButtonsContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+  },
+  testButton: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#D1D5DB',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
   },
   footer: {
     alignItems: 'center',

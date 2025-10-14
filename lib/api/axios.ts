@@ -12,7 +12,7 @@ import { ApiConfig, ApiError, ApiResponse, AuthTokens, RefreshTokenResponse } fr
  * API client configuration and defaults
  */
 const DEFAULT_CONFIG: ApiConfig = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://chatenergia.com.br',
   timeout: 30000, // 30 seconds
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
