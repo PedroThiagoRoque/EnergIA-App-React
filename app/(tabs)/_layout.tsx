@@ -7,14 +7,14 @@ export default function TabsLayout() {
     <AuthGuard requireAuth={true}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#3B82F6',
+          tabBarActiveTintColor: '#00A41B',
           tabBarInactiveTintColor: '#9CA3AF',
           tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopColor: '#E5E7EB',
+            backgroundColor: '#000000',
+            borderTopColor: 'rgba(0, 164, 27, 0.3)',
           },
           headerStyle: {
-            backgroundColor: '#3B82F6',
+            backgroundColor: '#00A41B',
           },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: {
