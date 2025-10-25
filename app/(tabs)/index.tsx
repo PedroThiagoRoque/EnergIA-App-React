@@ -1,32 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Animated, StatusBar } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, StatusBar } from 'react-native';
 import { useAuth } from '../../lib/auth/useAuth';
 import { router } from 'expo-router';
 
 export default function DashboardScreen() {
   const { user, logout, isLoading } = useAuth();
-  const smokeAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const startSmokeAnimation = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(smokeAnimation, {
-            toValue: 1,
-            duration: 3000,
-            useNativeDriver: false,
-          }),
-          Animated.timing(smokeAnimation, {
-            toValue: 0,
-            duration: 3000,
-            useNativeDriver: false,
-          }),
-        ])
-      ).start();
-    };
-
-    startSmokeAnimation();
-  }, [smokeAnimation]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -54,14 +32,8 @@ export default function DashboardScreen() {
     router.push('/settings');
   };
 
-  const animatedBackground = smokeAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(0, 164, 27, 0.1)', 'rgba(0, 164, 27, 0.3)'],
-  });
-
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.backgroundSmoke, { backgroundColor: animatedBackground }]} />
       <ScrollView style={styles.scrollContainer}>
         <View style={styles.header}>
         <Text style={styles.title}>EnergIA Dashboard</Text>
@@ -148,22 +120,13 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
-  },
-  backgroundSmoke: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 0,
+    backgroundColor: '#F8F9FA',
   },
   scrollContainer: {
     flex: 1,
-    zIndex: 1,
   },
   header: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     padding: 24,
     paddingTop: 48,
     borderBottomWidth: 1,
@@ -175,12 +138,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#2D3748',
     marginBottom: 16,
     textAlign: 'center',
   },
   userInfo: {
-    backgroundColor: 'rgba(0, 164, 27, 0.2)',
+    backgroundColor: 'rgba(0, 164, 27, 0.1)',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -188,12 +151,12 @@ const styles = StyleSheet.create({
   userText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#2D3748',
     marginBottom: 2,
   },
   emailText: {
     fontSize: 14,
-    color: '#CCCCCC',
+    color: '#718096',
   },
   cardGrid: {
     flexDirection: 'row',
@@ -202,7 +165,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FFFFFF',
     padding: 20,
     borderRadius: 12,
     width: '47%',
@@ -212,17 +175,17 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(0, 164, 27, 0.3)',
+    borderColor: '#E2E8F0',
   },
   chatCard: {
     backgroundColor: '#00A41B',
     borderColor: '#00A41B',
     shadowColor: '#00A41B',
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.3,
   },
   cardDisabled: {
     opacity: 0.6,
@@ -237,7 +200,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#2D3748',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -247,7 +210,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     fontSize: 12,
-    color: '#CCCCCC',
+    color: '#718096',
     textAlign: 'center',
     lineHeight: 16,
   },
@@ -267,11 +230,11 @@ const styles = StyleSheet.create({
   statsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#2D3748',
     marginBottom: 16,
   },
   statsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FFFFFF',
     padding: 20,
     borderRadius: 12,
     shadowColor: '#00A41B',
@@ -279,11 +242,11 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(0, 164, 27, 0.3)',
+    borderColor: '#E2E8F0',
   },
   statItem: {
     flexDirection: 'row',
@@ -295,7 +258,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#2D3748',
     fontWeight: '500',
   },
   logoutButton: {
