@@ -38,10 +38,10 @@ export function useChat(): UseChatReturn {
       // Adicionar resposta da IA
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: response.response,
+        text: response.response || 'Resposta não disponível',
         isUser: false,
         timestamp: new Date(),
-        assistantType: response.assistantType,
+        assistantType: response.assistantType || 'EnergIA',
       };
 
       setMessages(prev => [...prev, aiMessage]);

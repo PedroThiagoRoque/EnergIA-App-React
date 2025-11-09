@@ -15,11 +15,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthGuard } from '../../lib/auth/AuthGuard';
 import { useAuth } from '../../lib/auth/useAuth';
 import { useChat } from '../../lib/hooks/useChat';
+import { useIcebreakers } from '../../lib/hooks/useIcebreakers';
+import { Icebreakers } from '../../components/Icebreakers';
 import type { ChatMessage } from '../../lib/types';
 
 function ChatScreenContent() {
   const { user } = useAuth();
   const { messages, isLoading, error, sendMessage, addWelcomeMessage } = useChat();
+  const { 
+    icebreakers, 
+    dicaDoDia, 
+    isLoading: icebreakersLoading, 
+    error: icebreakersError, 
+    refreshIcebreakers 
+  } = useIcebreakers();
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -44,7 +53,28 @@ function ChatScreenContent() {
     }
   };
 
-  const formatMessage = (text: string) => {
+  const handleIcebreakerPress = async (text: string) => {
+    // Preencher o campo de input
+    setInputText(text);
+    
+    // Aguardar um frame para que o estado seja atualizado
+    setTimeout(async () => {
+      try {
+        await sendMessage(text);
+      } catch (err) {
+        Alert.alert(
+          'Erro',
+          err instanceof Error ? err.message : 'Erro de conexão'
+        );
+      }
+    }, 100);
+  };
+
+  const formatMessage = (text: string | undefined | null) => {
+    // Verificação de segurança
+    if (!text || typeof text !== 'string') {
+      return 'Mensagem não disponível';
+    }
     // Formatar markdown básico (negrito)
     return text.replace(/\*\*(.*?)\*\*/g, '$1');
   };
@@ -108,6 +138,16 @@ function ChatScreenContent() {
             <Text style={styles.loadingText}>EnergIA está pensando...</Text>
           </View>
         )}
+
+        {/* Icebreakers */}
+        <Icebreakers
+          icebreakers={icebreakers}
+          dicaDoDia={dicaDoDia}
+          isLoading={icebreakersLoading}
+          error={icebreakersError}
+          onIcebreakerPress={handleIcebreakerPress}
+          onRefresh={refreshIcebreakers}
+        />
 
         {/* Input */}
         <View style={styles.inputContainer}>

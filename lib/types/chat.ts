@@ -10,3 +10,9 @@ export interface ChatResponse {
   response: string;
   assistantType: string;
 }
+
+export interface IcebreakersResponse {
+  temas: string[];
+  dicaDoDia?: string;
+  geradoEm?: string;
+}
