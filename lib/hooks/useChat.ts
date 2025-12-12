@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { sendChatMessage } from '../api/energia';
-import type { ChatMessage, ChatResponse } from '../types';
+import { chatService } from '../api/services/chat';
+import type { ChatMessage } from '../types';
 
 export interface UseChatReturn {
   messages: ChatMessage[];
@@ -21,9 +21,9 @@ export function useChat(): UseChatReturn {
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      text: text.trim(),
-      isUser: true,
-      timestamp: new Date(),
+      content: text.trim(),
+      role: 'user',
+      timestamp: new Date().toISOString(),
     };
 
     // Adicionar mensagem do usuário
@@ -33,31 +33,29 @@ export function useChat(): UseChatReturn {
 
     try {
       // Enviar mensagem para a API
-      const response: ChatResponse = await sendChatMessage(userMessage.text);
+      const response = await chatService.sendMessage(userMessage.content);
 
       // Adicionar resposta da IA
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: response.response || 'Resposta não disponível',
-        isUser: false,
-        timestamp: new Date(),
-        assistantType: response.assistantType || 'EnergIA',
+        content: response.response || 'Resposta não disponível',
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
-      
+
       const errorMessage = err instanceof Error ? err.message : 'Erro de conexão';
       setError(errorMessage);
 
       // Mensagem de erro para o usuário
       const errorChatMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
-        isUser: false,
-        timestamp: new Date(),
-        assistantType: 'Sistema',
+        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        role: 'system',
+        timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, errorChatMessage]);
@@ -74,10 +72,9 @@ export function useChat(): UseChatReturn {
   const addWelcomeMessage = useCallback((userName?: string) => {
     const welcomeMessage: ChatMessage = {
       id: '1',
-      text: `Olá${userName ? `, ${userName}` : ''}! Sou a EnergIA, sua assistente de eficiência energética. Como posso te ajudar hoje?`,
-      isUser: false,
-      timestamp: new Date(),
-      assistantType: 'EnergIA',
+      content: `Olá${userName ? `, ${userName}` : ''}! Sou a EnergIA, sua assistente de eficiência energética. Como posso te ajudar hoje?`,
+      role: 'assistant',
+      timestamp: new Date().toISOString(),
     };
     setMessages([welcomeMessage]);
   }, []);

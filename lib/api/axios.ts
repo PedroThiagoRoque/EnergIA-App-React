@@ -1,9 +1,9 @@
-import axios, { 
-  AxiosInstance, 
-  AxiosRequestConfig, 
-  AxiosResponse, 
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
   AxiosError,
-  InternalAxiosRequestConfig 
+  InternalAxiosRequestConfig
 } from 'axios';
 import { sessionManager } from '../auth/session';
 import { ApiConfig, ApiError, ApiResponse, AuthTokens, RefreshTokenResponse } from '../types';
@@ -53,8 +53,15 @@ class ApiClient {
       async (config: InternalAxiosRequestConfig) => {
         try {
           const token = await sessionManager.getAccessToken();
-          if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
+          const cookie = await sessionManager.getAuthCookie();
+
+          if (config.headers) {
+            if (token) {
+              config.headers.Authorization = `Bearer ${token}`;
+            }
+            if (cookie) {
+              config.headers.Cookie = cookie;
+            }
           }
         } catch (error) {
           console.warn('Failed to get access token for request:', error);
@@ -106,7 +113,7 @@ class ApiClient {
 
     try {
       const newTokens = await sessionManager.refreshTokens(this.refreshTokenRequest.bind(this));
-      
+
       if (newTokens) {
         // Process queued requests
         this.refreshQueue.forEach(({ resolve }) => {
@@ -142,7 +149,7 @@ class ApiClient {
         }
       );
 
-      if (response.data.success && response.data.data.tokens) {
+      if (response.data.success && response.data.data?.tokens) {
         return response.data.data.tokens;
       }
 
@@ -183,20 +190,20 @@ class ApiClient {
   private extractErrorMessage(data: unknown): string {
     if (typeof data === 'object' && data !== null) {
       const errorData = data as Record<string, unknown>;
-      
+
       if (typeof errorData.message === 'string') {
         return errorData.message;
       }
-      
+
       if (typeof errorData.error === 'string') {
         return errorData.error;
       }
-      
+
       if (Array.isArray(errorData.errors) && errorData.errors.length > 0) {
         return errorData.errors[0];
       }
     }
-    
+
     return 'An error occurred';
   }
 
@@ -234,8 +241,8 @@ class ApiClient {
   }
 
   async post<T = unknown>(
-    url: string, 
-    data?: unknown, 
+    url: string,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.post<ApiResponse<T>>(url, data, config);
@@ -243,8 +250,8 @@ class ApiClient {
   }
 
   async put<T = unknown>(
-    url: string, 
-    data?: unknown, 
+    url: string,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.put<ApiResponse<T>>(url, data, config);
@@ -252,8 +259,8 @@ class ApiClient {
   }
 
   async patch<T = unknown>(
-    url: string, 
-    data?: unknown, 
+    url: string,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.patch<ApiResponse<T>>(url, data, config);

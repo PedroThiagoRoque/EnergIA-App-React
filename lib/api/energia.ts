@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use lib/api/services instead.
+ */
 import { apiClient } from './axios';
 import type { IcebreakersResponse, ChatResponse } from '../types';
 
@@ -16,7 +19,7 @@ export interface LoginResponse {
  */
 export async function loginUserAlternative(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('🔐 Tentativa alternativa de login para:', credentials.email);
-  
+
   try {
     // Tentar com URLSearchParams ao invés de FormData
     const params = new URLSearchParams();
@@ -73,7 +76,7 @@ export async function loginUserAlternative(credentials: LoginCredentials): Promi
  */
 export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('🔐 Iniciando login para:', credentials.email);
-  
+
   try {
     // Criar FormData conforme documentação da API
     const formData = new FormData();
@@ -107,7 +110,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
     if (response.status === 302 || response.status === 301) {
       const location = response.headers.get('location');
       console.log('✅ Login bem-sucedido! Redirecionando para:', location);
-      
+
       return {
         success: true,
         redirect: location || '/dashboard'
@@ -117,7 +120,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
     // A API pode retornar 200 mesmo após login bem-sucedido
     // Vamos testar acesso ao dashboard para confirmar se o login funcionou
     console.log('🔍 Testando acesso ao dashboard para verificar se login foi bem-sucedido...');
-    
+
     try {
       const dashboardResponse = await fetch('https://chatenergia.com.br/dashboard', {
         method: 'GET',
@@ -134,11 +137,11 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
       // Se conseguir acessar o dashboard (200) ou não for redirecionado para login
       if (dashboardResponse.status === 200) {
         const dashboardContent = await dashboardResponse.text();
-        
+
         // Verificar se é realmente a página do dashboard
         if (dashboardContent.includes('dashboard') || dashboardContent.includes('Dashboard') ||
-            dashboardContent.includes('logout') || dashboardContent.includes('Logout') ||
-            dashboardContent.includes('Bem-vindo') || dashboardContent.includes('Welcome')) {
+          dashboardContent.includes('logout') || dashboardContent.includes('Logout') ||
+          dashboardContent.includes('Bem-vindo') || dashboardContent.includes('Welcome')) {
           console.log('✅ Login bem-sucedido - acesso ao dashboard confirmado');
           return {
             success: true,
@@ -167,7 +170,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
     return {
       success: false
     };
-    
+
   } catch (error) {
     console.error('💥 Erro na requisição de login:', error);
     throw new Error('Erro de conexão. Verifique sua internet.');
@@ -179,7 +182,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
  */
 export async function checkAuth(): Promise<boolean> {
   console.log('🔍 Verificando autenticação...');
-  
+
   try {
     const response = await fetch('https://chatenergia.com.br/dashboard', {
       method: 'GET',
@@ -206,11 +209,11 @@ export async function checkAuth(): Promise<boolean> {
     if (response.ok) {
       const content = await response.text();
       console.log('📄 Conteúdo do dashboard (primeiros 300 chars):', content.substring(0, 300));
-      
+
       if (content.includes('dashboard') || content.includes('Dashboard') ||
-          content.includes('logout') || content.includes('Logout') ||
-          content.includes('Bem-vindo') || content.includes('Welcome') ||
-          content.includes('EnergIA') && !content.includes('Login')) {
+        content.includes('logout') || content.includes('Logout') ||
+        content.includes('Bem-vindo') || content.includes('Welcome') ||
+        content.includes('EnergIA') && !content.includes('Login')) {
         console.log('✅ Usuário autenticado');
         return true;
       } else {
@@ -234,7 +237,7 @@ export async function checkAuth(): Promise<boolean> {
  */
 export async function logoutUser(): Promise<boolean> {
   console.log('🚪 Fazendo logout...');
-  
+
   try {
     const response = await fetch('https://chatenergia.com.br/logout', {
       method: 'GET',
@@ -270,9 +273,9 @@ function debugCookies(response: Response) {
 /**
  * Testar conectividade com a API
  */
-export async function testApiConnection(): Promise<{connected: boolean, message: string}> {
+export async function testApiConnection(): Promise<{ connected: boolean, message: string }> {
   console.log('🔗 Testando conectividade com a API...');
-  
+
   try {
     const response = await fetch('https://chatenergia.com.br/', {
       method: 'GET',
@@ -312,7 +315,7 @@ export async function testApiConnection(): Promise<{connected: boolean, message:
  */
 export async function getUserData(): Promise<any> {
   console.log('👤 Obtendo dados do usuário...');
-  
+
   try {
     const response = await fetch('https://chatenergia.com.br/dashboard', {
       method: 'GET',
@@ -327,11 +330,11 @@ export async function getUserData(): Promise<any> {
     if (response.ok) {
       const html = await response.text();
       console.log('📄 HTML do dashboard recebido (primeiros 200 chars):', html.substring(0, 200));
-      
+
       // Tentar extrair nome do usuário do HTML
       let userName = 'Usuário';
       let userEmail = '';
-      
+
       // Procurar por padrões comuns de nome de usuário no HTML
       const namePatterns = [
         /Olá,\s*([^<,]+)/i,
@@ -341,7 +344,7 @@ export async function getUserData(): Promise<any> {
         /name['"]\s*:\s*['"]([^'"]+)['"]/i,
         /"user":\s*"([^"]+)"/i
       ];
-      
+
       for (const pattern of namePatterns) {
         const match = html.match(pattern);
         if (match && match[1]) {
@@ -350,7 +353,7 @@ export async function getUserData(): Promise<any> {
           break;
         }
       }
-      
+
       // Procurar por email no HTML
       const emailMatch = html.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
       if (emailMatch) {
@@ -362,7 +365,7 @@ export async function getUserData(): Promise<any> {
         name: userName,
         email: userEmail,
       };
-      
+
       console.log('✅ Dados do usuário:', userData);
       return userData;
     }
@@ -415,7 +418,7 @@ export async function getDailyIcebreakers(): Promise<IcebreakersResponse> {
     }
 
     const responseText = await response.text();
-    
+
     // Verificar se começa com HTML
     if (responseText.trim().startsWith('<')) {
       console.warn('⚠️ Resposta é HTML, não JSON. Usuário pode não estar autenticado.');
@@ -432,7 +435,7 @@ export async function getDailyIcebreakers(): Promise<IcebreakersResponse> {
     }
 
     console.log('✅ Icebreakers recebidos:', data);
-    
+
     return data;
   } catch (error) {
     console.error('💥 Erro ao buscar icebreakers:', error);
@@ -470,13 +473,13 @@ export async function sendChatMessage(message: string): Promise<ChatResponse> {
 
     const data = await response.json();
     console.log('✅ Resposta do chat recebida:', data);
-    
+
     // Mapear a resposta da API para o formato esperado
     const chatResponse: ChatResponse = {
       response: data.reply || data.response || 'Resposta não disponível',
       assistantType: data.assistantType || 'EnergIA'
     };
-    
+
     return chatResponse;
   } catch (error) {
     console.error('💥 Erro ao enviar mensagem para o chat:', error);

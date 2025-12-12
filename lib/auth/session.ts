@@ -9,7 +9,7 @@ class SessionManager {
   private static instance: SessionManager;
   private refreshPromise: Promise<AuthTokens | null> | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): SessionManager {
     if (!SessionManager.instance) {
@@ -23,7 +23,7 @@ class SessionManager {
    */
   async setTokens(tokens: AuthTokens): Promise<void> {
     try {
-      const expiresAt = tokens.expiresIn 
+      const expiresAt = tokens.expiresIn
         ? Date.now() + (tokens.expiresIn * 1000)
         : undefined;
 
@@ -31,6 +31,7 @@ class SessionManager {
         SecureStore.setItemAsync(StorageKeys.ACCESS_TOKEN, tokens.accessToken),
         SecureStore.setItemAsync(StorageKeys.REFRESH_TOKEN, tokens.refreshToken),
         expiresAt ? SecureStore.setItemAsync(StorageKeys.TOKEN_EXPIRES_AT, expiresAt.toString()) : Promise.resolve(),
+        tokens.cookie ? SecureStore.setItemAsync(StorageKeys.AUTH_COOKIE, tokens.cookie) : Promise.resolve(),
       ]);
     } catch (error) {
       console.error('Failed to store tokens:', error);
@@ -63,14 +64,27 @@ class SessionManager {
   }
 
   /**
+   * Retrieve auth cookie from secure storage
+   */
+  async getAuthCookie(): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync(StorageKeys.AUTH_COOKIE);
+    } catch (error) {
+      console.error('Failed to retrieve auth cookie:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get all tokens from storage
    */
   async getTokens(): Promise<AuthTokens | null> {
     try {
-      const [accessToken, refreshToken, expiresAtStr] = await Promise.all([
+      const [accessToken, refreshToken, expiresAtStr, cookie] = await Promise.all([
         SecureStore.getItemAsync(StorageKeys.ACCESS_TOKEN),
         SecureStore.getItemAsync(StorageKeys.REFRESH_TOKEN),
         SecureStore.getItemAsync(StorageKeys.TOKEN_EXPIRES_AT),
+        SecureStore.getItemAsync(StorageKeys.AUTH_COOKIE),
       ]);
 
       if (!accessToken || !refreshToken) {
@@ -82,8 +96,9 @@ class SessionManager {
       return {
         accessToken,
         refreshToken,
-        expiresAt,
-        expiresIn: expiresAt ? Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)) : undefined,
+
+        expiresIn: expiresAt ? Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)) : 0,
+        cookie: cookie || undefined,
       };
     } catch (error) {
       console.error('Failed to retrieve tokens:', error);
@@ -171,7 +186,7 @@ class SessionManager {
     }
 
     this.refreshPromise = this._performRefresh(refreshTokenFn);
-    
+
     try {
       const result = await this.refreshPromise;
       return result;
@@ -207,6 +222,7 @@ class SessionManager {
         SecureStore.deleteItemAsync(StorageKeys.REFRESH_TOKEN),
         SecureStore.deleteItemAsync(StorageKeys.USER_DATA),
         SecureStore.deleteItemAsync(StorageKeys.TOKEN_EXPIRES_AT),
+        SecureStore.deleteItemAsync(StorageKeys.AUTH_COOKIE),
       ]);
     } catch (error) {
       console.error('Failed to clear session:', error);

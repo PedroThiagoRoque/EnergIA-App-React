@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { router } from 'expo-router';
-import { loginUser, loginUserAlternative, loginUserSimple, checkAuth, logoutUser, getUserData } from '../api/energia-simple';
+import { authService } from '../api/services/auth';
+import { userService } from '../api/services/user';
 import type {
   User,
-  LoginRequest,
-  SessionState,
-} from '../types/auth';
+  LoginCredentials,
+} from '../types';
 
 // Contexto de autenticação simplificado
 interface AuthContextType {
@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -29,30 +29,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Verificar autenticação ao inicializar
   const initializeAuth = useCallback(async () => {
     console.log('🔄 useAuth: Inicializando autenticação...');
-    
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const isAuth = await checkAuth();
-      console.log('🔍 useAuth: Status de autenticação:', isAuth);
-      
-      if (isAuth) {
-        console.log('✅ useAuth: Usuário autenticado, buscando dados...');
-        const userData = await getUserData();
-        setIsAuthenticated(true);
-        setUser(userData || { name: 'Usuário', email: '' });
-        console.log('✅ useAuth: Autenticação inicializada com sucesso');
-      } else {
-        console.log('❌ useAuth: Usuário não autenticado');
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('💥 useAuth: Falha ao inicializar auth:', error);
+      // Check if we have a token by trying to get user data
+      // If this fails (401), the interceptor will catch it or it will throw
+      const userData = await userService.getDashboard();
+      setIsAuthenticated(true);
+      setUser(userData);
+      console.log('✅ useAuth: Autenticação inicializada com sucesso');
+    } catch (_error) {
+      // If 401 or network error, assume not authenticated
+      console.log('❌ useAuth: Usuário não autenticado ou sessão expirada');
       setIsAuthenticated(false);
       setUser(null);
-      setError('Erro ao verificar autenticação');
     } finally {
       setIsLoading(false);
       console.log('🏁 useAuth: Inicialização finalizada');
@@ -60,88 +52,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Login com validação integrada
-  const login = useCallback(async (credentials: LoginRequest) => {
-    console.log('🚀 useAuth: Iniciando processo de login unificado...');
-    
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    console.log('🚀 useAuth: Iniciando login...');
+
     try {
       setIsLoading(true);
       setError(null);
 
-      // 1. Validação básica de formato
+      // 1. Validação básica
       if (!credentials.email || !credentials.password) {
-        console.log('❌ useAuth: Credenciais vazias');
         throw new Error('Email e senha são obrigatórios');
       }
 
-      if (!isValidEmail(credentials.email)) {
-        console.log('❌ useAuth: Email inválido:', credentials.email);
-        throw new Error('Formato de email inválido');
-      }
+      // 2. Login via serviço
+      const response = await authService.login(credentials);
 
-      if (credentials.password.length < 3) {
-        console.log('❌ useAuth: Senha muito curta');
-        throw new Error('Senha deve ter pelo menos 3 caracteres');
-      }
+      console.log('✅ useAuth: Login bem-sucedido');
 
-      console.log('✅ useAuth: Validação de formato OK, iniciando login...');
-
-      // 2. Estratégia de login em cascata (do mais simples ao mais complexo)
-      console.log('🎯 useAuth: Tentando login simples e direto...');
-      let response = await loginUserSimple({
-        email: credentials.email.trim(),
-        password: credentials.password
-      });
-
-      // Se falhar, tentar método alternativo
-      if (!response.success) {
-        console.log('🔄 useAuth: Login simples falhou, tentando método alternativo...');
-        response = await loginUserAlternative({
-          email: credentials.email.trim(),
-          password: credentials.password
-        });
-      }
-
-      // Se ainda falhar, tentar método completo
-      if (!response.success) {
-        console.log('⚠️ useAuth: Métodos anteriores falharam, tentando método completo...');
-        response = await loginUser({
-          email: credentials.email.trim(),
-          password: credentials.password
-        });
-      }
-
-      console.log('📥 useAuth: Resposta final da API:', response);
-
-      if (!response.success) {
-        console.log('❌ useAuth: Todos os métodos de login falharam');
-        throw new Error('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
-      }
-
-      console.log('✅ useAuth: Login bem-sucedido, buscando dados do usuário...');
-
-      // 3. Buscar dados do usuário após login
-      const userData = await getUserData();
-      
-      console.log('👤 useAuth: Dados do usuário obtidos:', userData);
-      
+      // 3. Atualizar estado
       setIsAuthenticated(true);
-      setUser(userData || { name: 'Usuário', email: credentials.email });
-      setError(null);
+      setUser(response.user);
 
-      console.log('🎯 useAuth: Redirecionando para dashboard...');
-      // Redirecionar para dashboard
+      // 4. Redirecionar
       router.replace('/(tabs)');
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro no login';
+
+    } catch (error: any) {
       console.error('💥 useAuth: Erro no login:', error);
-      setError(errorMessage);
+      setError(error.message || 'Falha ao realizar login');
       setIsAuthenticated(false);
       setUser(null);
       throw error;
     } finally {
       setIsLoading(false);
-      console.log('🏁 useAuth: Processo de login unificado finalizado');
     }
   }, []);
 
@@ -149,9 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       // Tentar fazer logout na API
-      await logoutUser();
+      await authService.logout();
     } catch (error) {
       console.warn('Failed to logout on server:', error);
     } finally {
@@ -160,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setError(null);
       setIsLoading(false);
-      
+
       // Redirecionar para login
       router.replace('/(auth)/login');
     }
@@ -211,16 +153,16 @@ function isValidEmail(email: string): boolean {
 // Validação de senha (pode ser expandida conforme necessário)
 export function validatePassword(password: string): string[] {
   const errors: string[] = [];
-  
+
   if (!password) {
     errors.push('Password is required');
     return errors;
   }
-  
+
   if (password.length < 6) {
     errors.push('Password must be at least 6 characters long');
   }
-  
+
   return errors;
 }
 

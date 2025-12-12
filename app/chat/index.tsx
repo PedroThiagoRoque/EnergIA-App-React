@@ -22,12 +22,12 @@ import type { ChatMessage } from '../../lib/types';
 function ChatScreenContent() {
   const { user } = useAuth();
   const { messages, isLoading, error, sendMessage, addWelcomeMessage } = useChat();
-  const { 
-    icebreakers, 
-    dicaDoDia, 
-    isLoading: icebreakersLoading, 
-    error: icebreakersError, 
-    refreshIcebreakers 
+  const {
+    icebreakers,
+    dicaDoDia,
+    isLoading: icebreakersLoading,
+    error: icebreakersError,
+    refreshIcebreakers
   } = useIcebreakers();
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
@@ -42,7 +42,7 @@ function ChatScreenContent() {
 
     const messageText = inputText.trim();
     setInputText('');
-    
+
     try {
       await sendMessage(messageText);
     } catch (err) {
@@ -56,7 +56,7 @@ function ChatScreenContent() {
   const handleIcebreakerPress = async (text: string) => {
     // Preencher o campo de input
     setInputText(text);
-    
+
     // Aguardar um frame para que o estado seja atualizado
     setTimeout(async () => {
       try {
@@ -82,25 +82,26 @@ function ChatScreenContent() {
   const renderMessage = ({ item }: { item: ChatMessage }) => (
     <View style={[
       styles.messageContainer,
-      item.isUser ? styles.userMessage : styles.aiMessage
+      styles.messageContainer,
+      item.role === 'user' ? styles.userMessage : styles.aiMessage
     ]}>
       <View style={[
         styles.messageBubble,
-        item.isUser ? styles.userBubble : styles.aiBubble
+        item.role === 'user' ? styles.userBubble : styles.aiBubble
       ]}>
-        {!item.isUser && item.assistantType && (
-          <Text style={styles.assistantType}>{item.assistantType}</Text>
+        {item.role !== 'user' && (
+          <Text style={styles.assistantType}>EnergIA</Text>
         )}
         <Text style={[
           styles.messageText,
-          item.isUser ? styles.userText : styles.aiText
+          item.role === 'user' ? styles.userText : styles.aiText
         ]}>
-          {formatMessage(item.text)}
+          {formatMessage(item.content)}
         </Text>
         <Text style={styles.timestamp}>
-          {item.timestamp.toLocaleTimeString('pt-BR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+          {new Date(item.timestamp).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit'
           })}
         </Text>
       </View>
@@ -109,7 +110,7 @@ function ChatScreenContent() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >

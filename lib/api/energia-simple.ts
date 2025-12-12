@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use lib/api/services instead.
+ */
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -13,7 +16,7 @@ export interface LoginResponse {
  */
 export async function loginUserSimple(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('🎯 [SIMPLE] Login direto para:', credentials.email);
-  
+
   try {
     // Usar URLSearchParams que é o método mais compatível
     const params = new URLSearchParams();
@@ -44,15 +47,15 @@ export async function loginUserSimple(credentials: LoginCredentials): Promise<Lo
 
     if (dashboardResponse.ok) {
       const html = await dashboardResponse.text();
-      
+
       // Múltiplas verificações para detectar se está logado
       const hasPasswordField = html.includes('type="password"') || html.includes('name="password"');
       const hasLoginForm = html.toLowerCase().includes('login') && hasPasswordField;
       const hasLogout = html.toLowerCase().includes('logout') || html.toLowerCase().includes('sair');
       const hasDashboard = html.toLowerCase().includes('dashboard') || html.toLowerCase().includes('bem-vindo');
-      
+
       console.log('🔍 [SIMPLE] Análise:', { hasPasswordField, hasLoginForm, hasLogout, hasDashboard });
-      
+
       // Se não tem formulário de login OU tem elementos de dashboard/logout, está logado
       if (!hasLoginForm || hasLogout || hasDashboard) {
         console.log('✅ [SIMPLE] Login bem-sucedido!');
@@ -74,7 +77,7 @@ export async function loginUserSimple(credentials: LoginCredentials): Promise<Lo
  */
 export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('🔐 [DIAG] Iniciando login para:', credentials.email);
-  
+
   try {
     // 1. Testar conectividade básica primeiro  
     console.log('🌐 [DIAG] Testando conectividade com servidor...');
@@ -152,28 +155,28 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
 
     if (dashboardResponse.ok) {
       const html = await dashboardResponse.text();
-      
+
       console.log('📄 [DIAG] Dashboard HTML length:', html.length);
       console.log('📄 [DIAG] Dashboard URL final:', dashboardResponse.url);
-      
+
       // Análise mais detalhada
       const hasLogin = html.toLowerCase().includes('login');
       const hasLogout = html.toLowerCase().includes('logout') || html.toLowerCase().includes('sair');
       const hasDashboard = html.toLowerCase().includes('dashboard');
-      const hasPasswordField = html.includes('type="password"') || 
-                              html.includes('name="password"') ||
-                              html.includes('id="password"');
-      const hasEmailField = html.includes('type="email"') || 
-                           html.includes('name="email"') ||
-                           html.includes('id="email"');
-      
+      const hasPasswordField = html.includes('type="password"') ||
+        html.includes('name="password"') ||
+        html.includes('id="password"');
+      const hasEmailField = html.includes('type="email"') ||
+        html.includes('name="email"') ||
+        html.includes('id="email"');
+
       console.log('🔍 [DIAG] Análise do HTML:');
       console.log('  - Contém "login":', hasLogin);
       console.log('  - Contém "logout/sair":', hasLogout);
       console.log('  - Contém "dashboard":', hasDashboard);
       console.log('  - Tem campo senha:', hasPasswordField);
       console.log('  - Tem campo email:', hasEmailField);
-      
+
       // Log de trechos específicos para debug
       const htmlLower = html.toLowerCase();
       if (htmlLower.includes('erro') || htmlLower.includes('error')) {
@@ -183,28 +186,28 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
           console.log('⚠️ [DIAG] Erro encontrado:', errorMatch[0]);
         }
       }
-      
+
       // Decisão final
       const isLoginPage = hasPasswordField && hasEmailField;
       const isDashboardPage = !isLoginPage && (hasLogout || hasDashboard);
-      
+
       if (isDashboardPage) {
         console.log('✅ [DIAG] LOGIN SUCESSO - Dashboard detectado');
         return { success: true, redirect: '/dashboard' };
       } else {
         console.log('❌ [DIAG] LOGIN FALHOU - Ainda na página de login');
-        
+
         // Salvar HTML para análise (primeiros 1000 chars)
         console.log('📝 [DIAG] HTML completo (amostra):', html.substring(0, 1000));
-        
+
         return { success: false };
       }
-      
+
     } else {
       console.log('❌ [DIAG] Dashboard inacessível, status:', dashboardResponse.status);
       return { success: false };
     }
-    
+
   } catch (error) {
     console.error('💥 [DIAG] Erro crítico:', error);
     return { success: false };
@@ -226,7 +229,7 @@ export async function checkAuth(): Promise<boolean> {
       const hasPasswordField = html.includes('type="password"');
       return !hasPasswordField; // Se não tem campo de senha, está logado
     }
-    
+
     return false;
   } catch (error) {
     console.error('Erro no checkAuth:', error);
@@ -255,7 +258,7 @@ export async function logoutUser(): Promise<boolean> {
  */
 export async function getUserData(): Promise<any> {
   console.log('👤 [USER] Obtendo dados do usuário...');
-  
+
   try {
     const response = await fetch('https://chatenergia.com.br/dashboard', {
       method: 'GET',
@@ -265,7 +268,7 @@ export async function getUserData(): Promise<any> {
     if (response.ok) {
       const html = await response.text();
       console.log('📄 [USER] HTML obtido, tamanho:', html.length);
-      
+
       // Extrair nome do usuário do HTML
       const userName = extractUserName(html);
       console.log('👤 [USER] Nome extraído:', userName);
@@ -289,12 +292,12 @@ export async function getUserData(): Promise<any> {
  */
 function extractUserName(html: string): string | null {
   console.log('🔍 [EXTRACT] Extraindo nome do usuário...');
-  
+
   try {
     // Padrão 1: Procurar por "Olá, [Nome]!" no HTML
     const greetingPattern = /Olá,\s*<br><h3>\s*([^<]+)!/i;
     let match = html.match(greetingPattern);
-    
+
     if (match && match[1]) {
       const name = match[1].trim();
       console.log('✅ [EXTRACT] Nome encontrado via padrão de saudação:', name);
@@ -304,7 +307,7 @@ function extractUserName(html: string): string | null {
     // Padrão 2: Procurar por estrutura HTML mais flexível
     const flexiblePattern = /Olá,.*?<h3[^>]*>\s*([^<]+)\s*<\/h3>/is;
     match = html.match(flexiblePattern);
-    
+
     if (match && match[1]) {
       const name = match[1].trim().replace(/!$/, ''); // Remove exclamação se houver
       console.log('✅ [EXTRACT] Nome encontrado via padrão flexível:', name);
@@ -314,7 +317,7 @@ function extractUserName(html: string): string | null {
     // Padrão 3: Procurar por qualquer texto após "Olá"
     const simplePattern = /Olá,?\s*([^<\n!]+)/i;
     match = html.match(simplePattern);
-    
+
     if (match && match[1]) {
       const name = match[1].trim();
       console.log('✅ [EXTRACT] Nome encontrado via padrão simples:', name);
@@ -323,7 +326,7 @@ function extractUserName(html: string): string | null {
 
     console.log('❌ [EXTRACT] Nome não encontrado em nenhum padrão');
     console.log('🔍 [EXTRACT] Amostra do HTML para debug:', html.substring(0, 1000));
-    
+
     return null;
   } catch (error) {
     console.error('💥 [EXTRACT] Erro na extração:', error);
@@ -334,16 +337,16 @@ function extractUserName(html: string): string | null {
 /**
  * Testar conectividade e estado da API
  */
-export async function testApiConnection(): Promise<{connected: boolean, message: string}> {
+export async function testApiConnection(): Promise<{ connected: boolean, message: string }> {
   console.log('🔗 [TEST] Iniciando teste de conectividade...');
-  
+
   try {
     // 1. Teste básico de conectividade
     console.log('🌐 [TEST] Testando página inicial...');
     const homeResponse = await fetch('https://chatenergia.com.br/', {
       method: 'GET',
     });
-    
+
     console.log('🌐 [TEST] Página inicial:', homeResponse.status, homeResponse.ok);
 
     // 2. Teste da página de login
@@ -351,7 +354,7 @@ export async function testApiConnection(): Promise<{connected: boolean, message:
     const loginResponse = await fetch('https://chatenergia.com.br/login', {
       method: 'GET',
     });
-    
+
     console.log('📄 [TEST] Página login:', loginResponse.status, loginResponse.ok);
 
     // 3. Teste do dashboard (deve redirecionar para login se não autenticado)
@@ -359,7 +362,7 @@ export async function testApiConnection(): Promise<{connected: boolean, message:
     const dashboardResponse = await fetch('https://chatenergia.com.br/dashboard', {
       method: 'GET',
     });
-    
+
     console.log('🔒 [TEST] Dashboard:', dashboardResponse.status, dashboardResponse.ok);
 
     if (homeResponse.ok && loginResponse.ok) {
@@ -385,7 +388,7 @@ Página login: ${loginResponse.status}`
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
     console.error('💥 [TEST] Erro na conectividade:', error);
-    
+
     return {
       connected: false,
       message: `❌ Erro de conexão: ${errorMsg}
@@ -401,9 +404,9 @@ Verifique:
 /**
  * Verificar se credenciais são válidas via múltiplos testes
  */
-export async function validateCredentials(credentials: LoginCredentials): Promise<{valid: boolean, details: string}> {
+export async function validateCredentials(credentials: LoginCredentials): Promise<{ valid: boolean, details: string }> {
   console.log('🔍 [VALID] Validando credenciais para:', credentials.email);
-  
+
   if (!credentials.email || !credentials.password) {
     return {
       valid: false,
@@ -428,14 +431,14 @@ export async function validateCredentials(credentials: LoginCredentials): Promis
   // Testar login real
   try {
     const result = await loginUserAlternative(credentials);
-    
+
     return {
       valid: result.success,
-      details: result.success 
-        ? '✅ Credenciais válidas!' 
+      details: result.success
+        ? '✅ Credenciais válidas!'
         : '❌ Credenciais inválidas ou erro no servidor'
     };
-    
+
   } catch (error) {
     return {
       valid: false,
@@ -449,7 +452,7 @@ export async function validateCredentials(credentials: LoginCredentials): Promis
  */
 export async function loginUserAlternative(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('🧪 [ALT] Testando métodos alternativos para:', credentials.email);
-  
+
   const methods = [
     {
       name: 'URLSearchParams',
@@ -485,10 +488,10 @@ export async function loginUserAlternative(credentials: LoginCredentials): Promi
 
   for (const method of methods) {
     console.log(`🧪 [ALT] Tentando método: ${method.name}`);
-    
+
     try {
       const { body, headers } = method.prepare();
-      
+
       const response = await fetch('https://chatenergia.com.br/login', {
         method: 'POST',
         body,
@@ -516,15 +519,15 @@ export async function loginUserAlternative(credentials: LoginCredentials): Promi
       if (dashboardResponse.ok) {
         const html = await dashboardResponse.text();
         const hasPasswordField = html.includes('type="password"');
-        
+
         console.log(`🔍 [ALT] ${method.name} - Tem campo senha:`, hasPasswordField);
-        
+
         if (!hasPasswordField) {
           console.log(`✅ [ALT] SUCESSO com método: ${method.name}`);
           return { success: true, redirect: '/dashboard' };
         }
       }
-      
+
     } catch (error) {
       console.error(`💥 [ALT] Erro no método ${method.name}:`, error);
     }

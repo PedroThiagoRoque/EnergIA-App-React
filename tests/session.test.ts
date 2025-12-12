@@ -17,15 +17,15 @@ describe('SessionManager', () => {
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
     expiresIn: 3600,
-    tokenType: 'Bearer',
+
   };
 
   const mockUser: User = {
     id: '123',
     email: 'test@example.com',
     name: 'Test User',
-    createdAt: '2023-01-01T00:00:00Z',
-    updatedAt: '2023-01-01T00:00:00Z',
+    // createdAt: '2023-01-01T00:00:00Z',
+    // updatedAt: '2023-01-01T00:00:00Z',
   };
 
   beforeEach(() => {

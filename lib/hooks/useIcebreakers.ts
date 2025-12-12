@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getDailyIcebreakers } from '../api/energia';
-import { checkAuth } from '../api/energia';
-import type { IcebreakersResponse } from '../types';
+import { chatService } from '../api/services/chat';
+
 
 export interface UseIcebreakersReturn {
   icebreakers: string[];
@@ -28,32 +27,28 @@ export function useIcebreakers(): UseIcebreakersReturn {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // Verificar autenticação primeiro
-      const isAuthenticated = await checkAuth();
-      if (!isAuthenticated) {
-        console.log('⚠️ Usuário não autenticado, usando sugestões locais');
-        setError('Faça login para ver sugestões personalizadas');
-        return; // Manter sugestões locais padrão
-      }
-      
-      const data = await getDailyIcebreakers();
-      
+
+      const data = await chatService.getIcebreakers();
+
       // Só atualizar se receber dados válidos da API
-      if (data.temas && data.temas.length > 0) {
-        setIcebreakers(data.temas);
-        setDicaDoDia(data.dicaDoDia);
-        console.log('✅ Icebreakers da API carregados:', data.temas.length, 'temas');
-        console.log('🎯 Temas recebidos:', data.temas);
+      if (data.icebreakers && data.icebreakers.length > 0) {
+        // Map API response to string array if needed, or update type
+        // The new type IcebreakersResponse has icebreakers: Icebreaker[]
+        // But the state is string[]
+        // Let's assume we map it or if backend returns strings (which it might not per new type)
+        // Adjusting to map from Icebreaker[] to string[]
+        setIcebreakers(data.icebreakers.map(i => i.text));
+        setDicaDoDia(data.dailyTip);
+        console.log('✅ Icebreakers da API carregados:', data.icebreakers.length, 'temas');
       } else {
         console.log('⚠️ API retornou dados vazios, mantendo sugestões locais');
       }
-      
+
     } catch (err) {
       console.error('❌ Erro ao carregar icebreakers:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar sugestões';
       setError(errorMessage);
-      
+
       // Manter sugestões locais ampliadas em caso de erro
       setIcebreakers([
         'Iluminação LED por cômodo',
@@ -67,7 +62,7 @@ export function useIcebreakers(): UseIcebreakersReturn {
         'Horário de ponta vs fora de ponta',
         'Eficiência energética em casa'
       ]);
-      
+
       // Definir uma dica local padrão
       setDicaDoDia('💡 Dica: Desligue aparelhos em stand-by para economizar até 10% na conta de luz');
     } finally {
@@ -84,7 +79,7 @@ export function useIcebreakers(): UseIcebreakersReturn {
     const timer = setTimeout(() => {
       loadIcebreakers();
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [loadIcebreakers]);
 
