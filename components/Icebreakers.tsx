@@ -11,10 +11,9 @@ import {
 export interface IcebreakersProps {
   icebreakers: string[];
   dicaDoDia?: string;
-  isLoading: boolean;
-  error: string | null;
   onIcebreakerPress: (text: string) => void;
   onRefresh?: () => void;
+  shuffleTrigger?: number;
 }
 
 export function Icebreakers({
@@ -24,16 +23,18 @@ export function Icebreakers({
   error,
   onIcebreakerPress,
   onRefresh,
+  shuffleTrigger = 0,
 }: IcebreakersProps) {
   // Selecionar 3 sugestões aleatórias
-  const getRandomSuggestions = (items: string[], count: number = 3) => {
-    if (items.length <= count) return items;
-    const shuffled = [...items].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
-  };
+  const suggestions = React.useMemo(() => {
+    const getRandomSuggestions = (items: string[], count: number = 3) => {
+      if (items.length <= count) return items;
+      const shuffled = [...items].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    };
+    return getRandomSuggestions(icebreakers, 3);
+  }, [icebreakers, shuffleTrigger]);
 
-  const suggestions = getRandomSuggestions(icebreakers, 3);
-  
   // Debug
   console.log('🎲 Icebreakers component - icebreakers:', icebreakers.length, 'suggestions:', suggestions.length);
 
@@ -61,7 +62,7 @@ export function Icebreakers({
           <Text style={styles.tipText}>{dicaDoDia}</Text>
         </View>
       )}
-      
+
       <View style={styles.header}>
         <Text style={styles.title}>💡 Começar por:</Text>
         {error && (
@@ -70,7 +71,7 @@ export function Icebreakers({
           </Text>
         )}
       </View>
-      
+
       <View style={styles.buttonContainer}>
         {suggestions.map((suggestion, index) => (
           <TouchableOpacity

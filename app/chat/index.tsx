@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Stack } from 'expo-router';
 import {
   View,
   Text,
@@ -11,7 +12,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthGuard } from '../../lib/auth/AuthGuard';
 import { useAuth } from '../../lib/auth/useAuth';
 import { useChat } from '../../lib/hooks/useChat';
@@ -30,12 +31,24 @@ function ChatScreenContent() {
     refreshIcebreakers
   } = useIcebreakers();
   const [inputText, setInputText] = useState('');
+  const [shuffleTrigger, setShuffleTrigger] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   // Mensagem de boas-vindas ao carregar
   useEffect(() => {
     addWelcomeMessage(user?.name);
   }, [user?.name, addWelcomeMessage]);
+
+  // Shuffle icebreakers when AI responds
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      // Check if the last message is from the assistant (or EnergIA type)
+      if (lastMessage.role !== 'user') {
+        setShuffleTrigger(prev => prev + 1);
+      }
+    }
+  }, [messages]);
 
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -54,20 +67,15 @@ function ChatScreenContent() {
   };
 
   const handleIcebreakerPress = async (text: string) => {
-    // Preencher o campo de input
-    setInputText(text);
-
-    // Aguardar um frame para que o estado seja atualizado
-    setTimeout(async () => {
-      try {
-        await sendMessage(text);
-      } catch (err) {
-        Alert.alert(
-          'Erro',
-          err instanceof Error ? err.message : 'Erro de conexão'
-        );
-      }
-    }, 100);
+    // Enviar mensagem diretamente sem preencher input
+    try {
+      await sendMessage(text);
+    } catch (err) {
+      Alert.alert(
+        'Erro',
+        err instanceof Error ? err.message : 'Erro de conexão'
+      );
+    }
   };
 
   const formatMessage = (text: string | undefined | null) => {
@@ -108,18 +116,30 @@ function ChatScreenContent() {
     </View>
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: '#4CAF50' },
+          headerTintColor: 'white',
+          headerTitleAlign: 'center',
+          headerTitle: () => (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>EnergIA Chat</Text>
+              <Text style={{ fontSize: 12, color: 'white', opacity: 0.9 }}>Assistente de Eficiência Energética</Text>
+            </View>
+          ),
+        }}
+      />
+
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>EnergIA Chat</Text>
-          <Text style={styles.headerSubtitle}>Assistente de Eficiência Energética</Text>
-        </View>
-
         {/* Messages */}
         <FlatList
           ref={flatListRef}
@@ -148,15 +168,16 @@ function ChatScreenContent() {
           error={icebreakersError}
           onIcebreakerPress={handleIcebreakerPress}
           onRefresh={refreshIcebreakers}
+          shuffleTrigger={shuffleTrigger}
         />
 
         {/* Input */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TextInput
             style={styles.textInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Digite sua pergunta sobre eficiência energética..."
+            placeholder="Digite sua pergunta..."
             multiline
             maxLength={500}
             editable={!isLoading}
@@ -173,7 +194,7 @@ function ChatScreenContent() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
