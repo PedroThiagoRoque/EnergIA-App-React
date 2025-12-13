@@ -1,6 +1,13 @@
 # EnergIA App React Native
 
-App móvel (React Native + Expo, TypeScript) para login, chat com API (chatbot), notificações locais e telemetria. Este projeto conecta-se a um backend legado utilizando adaptações para autenticação via cookies e streaming de resposta SSE.
+App mobile (React Native + Expo, TypeScript) para login, chat com API (chatbot), notificações locais e telemetria. Este projeto conecta-se a um backend legado utilizando adaptações para autenticação via cookies e streaming de resposta SSE.
+
+## 📱 Preview
+
+<p align="center">
+  <img src="assets/appreact1.png" alt="App Screen 1" width="45%">
+  <img src="assets/appreact2.png" alt="App Screen 2" width="45%">
+</p>
 
 ## 🚀 Como Rodar o Projeto
 
