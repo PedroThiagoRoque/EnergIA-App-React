@@ -1,143 +1,92 @@
 # EnergIA App React Native
 
-App móvel (React Native + Expo, TypeScript) para login, chat com API (chatbot), notificações locais em horários aleatórios para estimular conversas e telemetria diária de engajamento enviada ao backend (Node) que persiste em MongoDB. **Build 100% local** via `expo prebuild` + Gradle/Xcode. Sem serviços de build.
+App móvel (React Native + Expo, TypeScript) para login, chat com API (chatbot), notificações locais e telemetria. Este projeto conecta-se a um backend legado utilizando adaptações para autenticação via cookies e streaming de resposta SSE.
 
-## Tecnologias
+## 🚀 Como Rodar o Projeto
 
-- **React Native** com **Expo SDK 54**
-- **TypeScript** com strict mode
-- **Expo Router** para navegação baseada em arquivos
-- **ESLint** + **Prettier** para qualidade de código
-- **Jest** para testes unitários
-- Build local com `expo prebuild`
+Para desenvolver localmente no Linux/Android, utilize o seguinte comando:
 
-## Estrutura do Projeto
+```bash
+npx expo start --go
+```
+
+Este comando inicia o servidor de desenvolvimento do Expo e permite rodar o app no Expo Go ou em um emulador Android/iOS conectado.
+
+Outros comandos:
+```bash
+npm run start          # Iniciar servidor Expo padrão
+npm run android        # Abrir no Android
+npm run ios            # Abrir no iOS (macOS apenas)
+npm run web            # Abrir no navegador web
+npm run test           # Rodar testes unitários
+```
+
+## 📱 Funcionalidades
+
+### Autenticação
+- **Login Seguro**: Integração com API legada usando `multipart/form-data`.
+- **Gestão de Sessão**: Armazenamento seguro de cookies de autenticação (`connect.sid`) usando `expo-secure-store`.
+- **Persistência**: Mantém o usuário logado entre sessões.
+
+### Dashboard Moderno
+- **Foco no Chat**: Design minimalista focado na interação principal.
+- **Header Limpo**: Saudação personalizada baseada no horário.
+- **Status de Conexão**: Indicador visual de conectividade.
+
+### Chat Inteligente (EnergIA)
+- **Mensagens em Tempo Real**: Suporte a respostas via Server-Sent Events (SSE).
+- **Icebreakers Dinâmicos**: Sugestões de conversa que se renovam a cada resposta da IA.
+- **Fallback Offline**: Sugestões locais caso a API falhe.
+- **Interface Responsiva**: Input que se adapta ao teclado e safe areas.
+
+## 🛠️ Principais Bibliotecas
+
+As principais dependências do projeto são:
+
+- **Core**:
+  - `react-native`: Framework UI.
+  - `expo`: Plataforma de desenvolvimento.
+  - `typescript`: Tipagem estática.
+
+- **Navegação & UI**:
+  - `expo-router`: Roteamento baseado em arquivos (semelhante ao Next.js).
+  - `react-native-safe-area-context`: Gestão de áreas seguras (notches, home bars).
+  - `expo-linear-gradient`: Gradientes visuais.
+  - `expo-status-bar`: Controle da barra de status.
+
+- **Dados & Conexão**:
+  - `axios`: Cliente HTTP com interceptors para cookies.
+  - `expo-secure-store`: Armazenamento criptografado de tokens.
+  - `@react-native-async-storage/async-storage`: Armazenamento local simples.
+
+- **Qualidade**:
+  - `eslint` + `prettier`: Padronização de código.
+  - `jest`: Testes unitários.
+
+## 📂 Estrutura do Projeto
 
 ```
 app/
   (auth)/login.tsx      # Tela de login
-  (tabs)/index.tsx      # Tela principal (home)
-  chat/index.tsx        # Tela de chat
-  settings/index.tsx    # Configurações
-  _layout.tsx           # Layout raiz
-components/
-  ui/                   # Componentes de UI reutilizáveis
-  __tests__/           # Testes de componentes
+  (tabs)/index.tsx      # Dashboard (Home)
+  chat/index.tsx        # Tela de Chat principal
+  _layout.tsx           # Configuração de rotas
+components/             # Componentes reutilizáveis (Icebreakers, etc)
 lib/
-  api/                 # Configuração do Axios
-  auth/                # Gerenciamento de sessão
-  chat/                # Hooks do chat
-  metrics/             # Telemetria e métricas
-  notifications/       # Notificações locais
-  types/               # Tipos TypeScript
-  data/                # Mocks e dados
-tests/                 # Utilitários de teste
+  api/                  # Serviços de API e setup do Axios
+  auth/                 # Contexto e hooks de autenticação
+  hooks/                # Hooks customizados (useChat, useIcebreakers)
+  types/                # Definições de tipos TypeScript
 ```
-
-## Comandos de Desenvolvimento
-
-### Instalação
-```bash
-npm install
-```
-
-### Desenvolvimento
-```bash
-npm run start          # Iniciar servidor Expo
-npm run android        # Abrir no Android
-npm run ios            # Abrir no iOS
-npm run web            # Abrir no navegador web
-```
-
-### Qualidade de Código
-```bash
-npm run lint           # Executar ESLint
-npm run lint:fix       # Corrigir problemas do ESLint
-npm run format         # Formatar código com Prettier
-npm run type-check     # Verificar tipos TypeScript
-```
-
-### Testes
-```bash
-npm run test           # Executar testes
-npm run test:watch     # Executar testes em modo watch
-npm run test:coverage  # Executar testes com cobertura
-```
-
-### Build Local
-```bash
-npx expo prebuild      # Gerar pastas android/ e ios/
-cd android && ./gradlew assembleDebug    # Build Android debug
-cd android && ./gradlew assembleRelease  # Build Android release
-```
-
-## Padrões de Desenvolvimento
-
-### TypeScript
-- Strict mode habilitado
-- Tipagem completa para todas as props e modelos
-- Interfaces/types em `lib/types/`
-
-### React Patterns
-- Componentes funcionais + Hooks
-- Separação de responsabilidades (UI, hooks, serviços)
-- Estado remoto com @tanstack/react-query (quando implementado)
-- Tokens seguros com expo-secure-store (quando implementado)
-
-### Qualidade
-- ESLint + Prettier configurados
-- Testes unitários com Jest
-- Commitlint para mensagens padronizadas
-- `npm run lint` e `npm run test` devem passar antes dos commits
-
-## Status de Implementação
-
-### ✅ Etapa 1 - Bootstrap & Qualidade (Concluída)
-- [x] Projeto Expo TS com Router ativo
-- [x] Scripts lint, test configurados
-- [x] ESLint + Prettier configurados
-- [x] Estrutura de pastas criada
-
-### 🔄 Próximas Etapas
-2. **HTTP e Sessão** - `axios` com interceptors e `SecureStore`
-3. **Autenticação** - Tela de login e navegação protegida
-4. **Chat** - Interface de chat com API
-5. **Métricas** - Telemetria de engajamento
-6. **Notificações** - Agenda pseudo-aleatória
-7. **Background Tasks** - Renovação e sincronização
-8. **Build Local** - APK/AAB assinados
-9. **Segurança** - Proteção de dados sensíveis
-10. **Documentação** - README e testes completos
-
-## Compatibilidade
-
-- **Android**: API 21+ (Android 5.0+)
-- **iOS**: iOS 11.0+
-- **Node.js**: 20.17.0+
-- **TypeScript**: 5.9.2+
 
 ## Troubleshooting
 
-### Problemas Comuns
-1. **Build errors**: Execute `npx expo prebuild --clean`
-2. **Metro cache**: Execute `npx expo start --clear`
-3. **Type errors**: Execute `npm run type-check`
-4. **Lint errors**: Execute `npm run lint:fix`
+### Problemas de Build
+Caso encontre erros de types ou cache:
+```bash
+npx expo start --clear
+```
 
-### Logs e Debug
-- Use `console.log` moderadamente
-- Para debug avançado, considere Flipper ou React Native Debugger
-- Logs de produção serão integrados com Sentry (etapa 9)
+### Autenticação Falhando
+Verifique se o backend legado está acessível e se os cookies estão sendo setados corretamente no `expo-secure-store`.
 
-## Contribuição
-
-1. Faça fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Execute `npm run lint` e `npm run test`
-4. Commit suas alterações (`git commit -m 'Add some AmazingFeature'`)
-5. Push para a branch (`git push origin feature/AmazingFeature`)
-6. Abra um Pull Request
-
-## Licença
-
-Este projeto está sob licença proprietária. Veja o arquivo `LICENSE.md` para mais detalhes.

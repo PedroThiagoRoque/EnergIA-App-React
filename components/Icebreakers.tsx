@@ -20,7 +20,6 @@ export function Icebreakers({
   icebreakers,
   dicaDoDia,
   isLoading,
-  error,
   onIcebreakerPress,
   onRefresh,
   shuffleTrigger = 0,
