@@ -25,8 +25,9 @@ export const chatService = {
             const response = await apiClient.post<any>('/chat/message', { message });
 
             // Handle SSE/Stream response format (Direct string response)
-            if (typeof response === 'string' && response.includes('data:')) {
-                const fullText = parseSSEResponse(response);
+            // Cast to any because TS expects ApiResponse object but runtime might be string
+            if (typeof (response as any) === 'string' && (response as any).includes('data:')) {
+                const fullText = parseSSEResponse(response as any);
                 return {
                     response: fullText,
                     assistantType: 'EnergIA'

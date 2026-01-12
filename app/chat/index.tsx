@@ -165,7 +165,6 @@ function ChatScreenContent() {
           icebreakers={icebreakers}
           dicaDoDia={dicaDoDia}
           isLoading={icebreakersLoading}
-          error={icebreakersError}
           onIcebreakerPress={handleIcebreakerPress}
           onRefresh={refreshIcebreakers}
           shuffleTrigger={shuffleTrigger}

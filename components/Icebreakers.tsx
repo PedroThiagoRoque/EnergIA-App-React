@@ -14,6 +14,7 @@ export interface IcebreakersProps {
   onIcebreakerPress: (text: string) => void;
   onRefresh?: () => void;
   shuffleTrigger?: number;
+  isLoading?: boolean;
 }
 
 export function Icebreakers({
@@ -64,11 +65,6 @@ export function Icebreakers({
 
       <View style={styles.header}>
         <Text style={styles.title}>💡 Começar por:</Text>
-        {error && (
-          <Text style={styles.warningText}>
-            (sugestões locais)
-          </Text>
-        )}
       </View>
 
       <View style={styles.buttonContainer}>
