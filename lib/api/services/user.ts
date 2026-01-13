@@ -21,77 +21,14 @@ export const userService = {
 
             // Case 2: HTML Response (Parsing required)
             if (typeof data === 'string') {
-                console.log('📄 userService.getDashboard: Received HTML, parsing user data...');
-                const html = data;
+                const { parseUserFromDashboardHtml } = await import('../../utils/htmlParser');
+                const { user, isAuthenticated } = parseUserFromDashboardHtml(data);
 
-                let userName = 'Usuário';
-                let userEmail = '';
-
-                // Extract Name
-                const namePatterns = [
-                    /Olá,\s*([^<,!]+)/i,
-                    /Hello,\s*([^<,!]+)/i,
-                    /Bem-vindo,\s*([^<,!]+)/i,
-                    /Welcome,\s*([^<,!]+)/i,
-                    /name['"]\s*:\s*['"]([^'"]+)['"]/i, // JS vars check
-                    /"user":\s*"([^"]+)"/i
-                ];
-
-                for (const pattern of namePatterns) {
-                    const match = html.match(pattern);
-                    if (match && match[1]) {
-                        userName = match[1].trim();
-                        break;
-                    }
+                if (isAuthenticated && user) {
+                    return user;
                 }
 
-                // Extract UserID and Group from hidden metadata (New Backend feature)
-                // <div id="user-metadata" style="display:none;" data-userid="<%= userId %>" data-group="<%= group %>"></div>
-                let userId = 'dashboard-extracted';
-                let userGroup: 'Watts' | 'Volts' = 'Watts';
-
-                const metaMatch = html.match(/data-userid=["']([^"']+)["']/);
-                const groupMatch = html.match(/data-group=["'](Watts|Volts)["']/i);
-
-                if (metaMatch && metaMatch[1]) {
-                    userId = metaMatch[1];
-                    console.log('✅ userService: Extracted Real UserID:', userId);
-                }
-
-                if (groupMatch && groupMatch[1]) {
-                    userGroup = groupMatch[1] as 'Watts' | 'Volts';
-                    console.log('✅ userService: Extracted Group:', userGroup);
-                } else {
-                    // Fallback heuristic
-                    if (html.includes('dashboard_gen') || html.includes('Visualização Genérica')) {
-                        console.log('⚠️ userService: Group fallback heuristic triggered (Volts)');
-                        userGroup = 'Volts';
-                    } else {
-                        console.log('⚠️ userService: No group found, defaulting to Watts');
-                    }
-                }
-
-                // Extract Email
-                const emailMatch = html.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-                if (emailMatch) {
-                    userEmail = emailMatch[1];
-                }
-
-                console.log('🔍 userService: Final Parsed User:', { userId, userName, userGroup });
-
-                if (userName !== 'Usuário' || userEmail) {
-                    return {
-                        id: userId,
-                        name: userName,
-                        email: userEmail,
-                        group: userGroup
-                    };
-                }
-
-                // Check for Auth failure indicators in HTML
-                if (html.includes('login') || html.includes('Login')) {
-                    throw new Error('Not authenticated (Redirected to Login)');
-                }
+                throw new Error('Not authenticated (Redirected to Login)');
             }
 
             throw new Error('Failed to parse dashboard data');
@@ -138,6 +75,23 @@ export const userService = {
             }
             console.warn('Failed to fetch notification:', error.message || error);
             return '';
+        }
+    },
+
+    /**
+     * Get daily toasts for scheduling
+     * GET /api/notification/toasts
+     */
+    async getDailyToasts(): Promise<string[]> {
+        try {
+            const response = await apiClient.get<{ toasts: string[] }>('/api/notification/toasts');
+            if (response.data && Array.isArray(response.data.toasts)) {
+                return response.data.toasts;
+            }
+            return [];
+        } catch (error: any) {
+            console.warn('Failed to fetch daily toasts:', error.message || error);
+            return [];
         }
     }
 };

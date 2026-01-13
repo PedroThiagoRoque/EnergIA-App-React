@@ -14,7 +14,7 @@ async function ensureNotifications() {
     console.log('🚫 Notifications disabled in Expo Go. Use a development build for full functionality.');
     return null;
   }
-  
+
   if (!Notifications) {
     try {
       Notifications = await import('expo-notifications');
@@ -38,7 +38,7 @@ async function ensureAndroidChannel() {
   try {
     const n = await ensureNotifications();
     if (!n) return; // Skip in Expo Go
-    
+
     await n.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
       name: 'Daily reminders',
       importance: n.AndroidImportance.DEFAULT,
@@ -54,7 +54,7 @@ export async function requestPermissions() {
   try {
     const n = await ensureNotifications();
     if (!n) return false; // Skip in Expo Go
-    
+
     const existing = await n.getPermissionsAsync();
     // existing.granted is boolean on most platforms
     if (existing.granted) return true;
@@ -76,11 +76,11 @@ export async function scheduleDailyNotificationAt(time: Time, options?: { title?
   try {
     const n = await ensureNotifications();
     if (!n) return null; // Skip in Expo Go
-    
+
     await ensureAndroidChannel();
 
     // Cancel any previous scheduled notification to avoid duplicates
-    await cancelScheduledNotification();
+    // await cancelScheduledNotification(); // MODIFIED: Don't cancel here if we are scheduling multiple
 
     const content = {
       title: options?.title ?? 'Lembrete diário',
@@ -95,12 +95,53 @@ export async function scheduleDailyNotificationAt(time: Time, options?: { title?
     } as any;
 
     const id = await n.scheduleNotificationAsync({ content, trigger });
-    await AsyncStorage.setItem(STORAGE_KEY, id);
+    // await AsyncStorage.setItem(STORAGE_KEY, id); // MODIFIED: We will manage IDs differently for batch
     console.log('Scheduled daily notification', id, time);
     return id;
   } catch (err) {
     console.log('Failed to schedule daily notification', err);
     return null;
+  }
+}
+
+export async function scheduleToastNotifications(toasts: string[], time: Time = { hour: 9, minute: 0 }) {
+  try {
+    const n = await ensureNotifications();
+    if (!n) return;
+
+    await ensureAndroidChannel();
+
+    // Cancel all previously scheduled notifications
+    await n.cancelAllScheduledNotificationsAsync();
+    console.log('Cancelled all previous notifications');
+
+    // Schedule up to 5 toasts for the next 5 days
+    const limit = Math.min(toasts.length, 5);
+
+    for (let i = 0; i < limit; i++) {
+      const toast = toasts[i];
+
+      const content = {
+        title: 'Dica do dia',
+        body: toast,
+        sound: 'default' as any,
+      };
+
+      // Calculate trigger date: Today + (i + 1) days
+      const triggerDate = new Date();
+      triggerDate.setDate(triggerDate.getDate() + (i + 1));
+      triggerDate.setHours(time.hour, time.minute, 0, 0);
+
+      const trigger = {
+        date: triggerDate,
+      } as any;
+
+      const id = await n.scheduleNotificationAsync({ content, trigger });
+      console.log(`Scheduled toast for ${triggerDate.toISOString()}: ${toast}`);
+    }
+
+  } catch (err) {
+    console.log('Failed to schedule toast batch:', err);
   }
 }
 
@@ -112,7 +153,7 @@ export async function cancelScheduledNotification() {
       await AsyncStorage.removeItem(STORAGE_KEY);
       return;
     }
-    
+
     const existing = await AsyncStorage.getItem(STORAGE_KEY);
     if (existing) {
       await n.cancelScheduledNotificationAsync(existing);

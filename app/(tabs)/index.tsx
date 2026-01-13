@@ -37,6 +37,19 @@ export default function DashboardScreen() {
     // Fetch notification
     if (user?.id) {
       userService.getNotification(user.id).then(setNotification);
+
+      // Schedule dynamic daily toasts
+      userService.getDailyToasts().then(toasts => {
+        if (toasts && toasts.length > 0) {
+          // Import dynamically to avoid side effects issues if necessary, or just use imported
+          // But we need to import it at top level or here. 
+          // Since it's not imported in component, I'll assume we import it top level or use require.
+          // Let's use the import we will add.
+          import('../../lib/notifications').then(({ scheduleToastNotifications }) => {
+            scheduleToastNotifications(toasts);
+          });
+        }
+      });
     }
   }, [user?.id]);
 

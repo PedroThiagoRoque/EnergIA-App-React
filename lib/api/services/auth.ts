@@ -92,22 +92,16 @@ export const authService = {
                     console.log('⚠️ authService.login: JSON parse failed, assuming HTML');
                 }
 
-                // Extract name if possible (from Dashboard HTML)
-                let name = 'Usuário';
-                const hasGreeting = responseText.includes('Olá,') || responseText.includes('Bem-vindo');
-
-                if (responseText.includes('Olá,')) {
-                    const match = responseText.match(/Olá,\s+([^!]+)!/);
-                    if (match) name = match[1];
-                }
+                // Extract user data from Dashboard HTML using shared parser
+                const { parseUserFromDashboardHtml } = await import('../../utils/htmlParser');
+                const { user, isAuthenticated } = parseUserFromDashboardHtml(responseText, credentials.email);
 
                 // If we got a redirect/success, assume we are logged in
                 // especially if we got a connect.sid cookie or valid redirect/greeting
                 const hasSession = cookieString.includes('connect.sid');
                 const validRedirect = isRedirect && response.headers.get('location');
-                const isDashboard = responseText.includes('Dashboard') || hasGreeting;
 
-                if (hasSession || validRedirect || isDashboard) {
+                if (hasSession || validRedirect || isAuthenticated) {
                     return {
                         tokens: {
                             accessToken: 'session-cookie', // Mock, we rely on cookie
@@ -115,15 +109,16 @@ export const authService = {
                             expiresIn: 3600,
                             cookie: cookieString
                         },
-                        user: {
+                        user: user || {
                             id: '1',
                             email: credentials.email,
-                            name: name
+                            name: 'Usuário',
+                            group: 'Watts' // Fallback
                         }
                     };
                 }
 
-                console.log('❌ authService.login: Validation failed. HasSession:', hasSession, 'IsDashboard:', isDashboard, 'HasGreeting:', hasGreeting);
+                console.log('❌ authService.login: Validation failed. HasSession:', hasSession, 'IsAuthenticated:', isAuthenticated);
                 if (responseText.length < 2000) {
                     console.log('📄 Body (first 2000 chars):', responseText);
                 } else {
