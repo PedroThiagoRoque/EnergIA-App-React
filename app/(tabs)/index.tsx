@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Dimensions } from 'react-native';
 import { useAuth } from '../../lib/auth/useAuth';
+import { userService } from '../../lib/api/services/user';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,13 +14,31 @@ export default function DashboardScreen() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const [greeting, setGreeting] = useState('');
+  const [notification, setNotification] = useState('');
+
+  const isVolts = user?.group === 'Volts';
+
+  // Theme Colors
+  const theme = {
+    primary: isVolts ? '#64748B' : '#4CAF50',
+    primaryDark: isVolts ? '#475569' : '#2E7D32',
+    background: isVolts ? '#F8FAFC' : '#F7F9FC',
+    accent: isVolts ? '#94A3B8' : '#4CAF50',
+    statusBg: isVolts ? '#F1F5F9' : '#E8F5E9',
+    statusText: isVolts ? '#475569' : '#2E7D32'
+  };
 
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Bom dia');
     else if (hour < 18) setGreeting('Boa tarde');
     else setGreeting('Boa noite');
-  }, []);
+
+    // Fetch notification
+    if (user?.id) {
+      userService.getNotification(user.id).then(setNotification);
+    }
+  }, [user?.id]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -60,13 +79,17 @@ export default function DashboardScreen() {
 
       {/* Main Content */}
       <View style={styles.content}>
-        <View style={styles.statusContainer}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>EnergIA Online</Text>
+        <View style={[styles.statusContainer, { backgroundColor: theme.statusBg }]}>
+          <View style={[styles.statusDot, { backgroundColor: theme.accent }]} />
+          <Text style={[styles.statusText, { color: theme.statusText }]}>
+            {isVolts ? 'Assistente Online' : 'EnergIA Online'}
+          </Text>
         </View>
 
         <Text style={styles.heroTitle}>
-          Como posso ajudar a economizar energia hoje?
+          {isVolts
+            ? 'Como posso ajudar você hoje?'
+            : 'Como posso ajudar a economizar energia hoje?'}
         </Text>
 
         <TouchableOpacity
@@ -75,17 +98,19 @@ export default function DashboardScreen() {
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={['#4CAF50', '#2E7D32']}
+            colors={[theme.primary, theme.primaryDark]}
             style={styles.chatButton}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.chatIconBubble}>
-              <Ionicons name="chatbubbles" size={32} color="#4CAF50" />
+              <Ionicons name="chatbubbles" size={32} color={theme.primary} />
             </View>
             <View style={styles.chatBtnTextContainer}>
-              <Text style={styles.chatBtnTitle}>Iniciar Conversa</Text>
-              <Text style={styles.chatBtnSubtitle}>Tire dúvidas e receba dicas</Text>
+              <Text style={styles.chatBtnTitle}>{isVolts ? 'Conversar' : 'Iniciar Conversa'}</Text>
+              <Text style={styles.chatBtnSubtitle}>
+                {isVolts ? 'Tire dúvidas e converse' : 'Tire dúvidas e receba dicas'}
+              </Text>
             </View>
             <Ionicons name="arrow-forward-circle" size={40} color="rgba(255,255,255,0.9)" />
           </LinearGradient>
@@ -93,11 +118,18 @@ export default function DashboardScreen() {
 
         {/* Quick Tips Carousel placeholder (optional, keeps functionality light) */}
         <View style={styles.tipsSection}>
-          <Text style={styles.sectionTitle}>Destaque do dia</Text>
+          <Text style={styles.sectionTitle}>{isVolts ? 'Para você' : 'Destaque do dia'}</Text>
           <View style={styles.tipCard}>
-            <Ionicons name="bulb-outline" size={24} color="#FBC02D" style={{ marginBottom: 8 }} />
+            <Ionicons
+              name={isVolts ? "notifications-outline" : "bulb-outline"}
+              size={24}
+              color={isVolts ? "#64748B" : "#FBC02D"}
+              style={{ marginBottom: 8 }}
+            />
             <Text style={styles.tipText}>
-              Desligar aparelhos da tomada quando não estiverem em uso evita o consumo "vampiro".
+              {notification || (isVolts
+                ? 'Olá! Estou aqui para conversar e ajudar no que precisar.'
+                : 'Desligar aparelhos da tomada quando não estiverem em uso evita o consumo "vampiro".')}
             </Text>
           </View>
         </View>

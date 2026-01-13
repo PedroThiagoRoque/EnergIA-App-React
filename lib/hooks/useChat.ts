@@ -2,16 +2,19 @@ import { useState, useCallback } from 'react';
 import { chatService } from '../api/services/chat';
 import type { ChatMessage } from '../types';
 
+import { useAuth } from '../auth/useAuth';
+
 export interface UseChatReturn {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
   clearMessages: () => void;
-  addWelcomeMessage: (userName?: string) => void;
+  addWelcomeMessage: (userName?: string, group?: 'Watts' | 'Volts') => void;
 }
 
 export function useChat(): UseChatReturn {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +36,8 @@ export function useChat(): UseChatReturn {
 
     try {
       // Enviar mensagem para a API
-      const response = await chatService.sendMessage(userMessage.content);
+      const group = user?.group || 'Watts';
+      const response = await chatService.sendMessage(userMessage.content, group);
 
       // Adicionar resposta da IA
       const aiMessage: ChatMessage = {
@@ -69,10 +73,19 @@ export function useChat(): UseChatReturn {
     setError(null);
   }, []);
 
-  const addWelcomeMessage = useCallback((userName?: string) => {
+  const addWelcomeMessage = useCallback((userName?: string, group?: 'Watts' | 'Volts') => {
+    let content = '';
+
+    if (group === 'Volts') {
+      content = `Olá${userName ? `, ${userName}` : ''}! Sou a EnergIA, sua assistente pessoal. Como posso ajudar você hoje?`;
+    } else {
+      // Default to Watts (Energy efficiency)
+      content = `Olá${userName ? `, ${userName}` : ''}! Sou a EnergIA, sua assistente de eficiência energética. Como posso te ajudar hoje?`;
+    }
+
     const welcomeMessage: ChatMessage = {
       id: '1',
-      content: `Olá${userName ? `, ${userName}` : ''}! Sou a EnergIA, sua assistente de eficiência energética. Como posso te ajudar hoje?`,
+      content,
       role: 'assistant',
       timestamp: new Date().toISOString(),
     };

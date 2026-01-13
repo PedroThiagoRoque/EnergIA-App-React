@@ -34,10 +34,17 @@ function ChatScreenContent() {
   const [shuffleTrigger, setShuffleTrigger] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
+  const isVolts = user?.group === 'Volts';
+  const theme = {
+    header: isVolts ? '#64748B' : '#4CAF50',
+    userBubble: isVolts ? '#64748B' : '#4CAF50',
+    assistantType: isVolts ? '#64748B' : '#4CAF50'
+  };
+
   // Mensagem de boas-vindas ao carregar
   useEffect(() => {
-    addWelcomeMessage(user?.name);
-  }, [user?.name, addWelcomeMessage]);
+    addWelcomeMessage(user?.name, user?.group);
+  }, [user?.name, user?.group, addWelcomeMessage]);
 
   // Shuffle icebreakers when AI responds
   useEffect(() => {
@@ -95,10 +102,10 @@ function ChatScreenContent() {
     ]}>
       <View style={[
         styles.messageBubble,
-        item.role === 'user' ? styles.userBubble : styles.aiBubble
+        item.role === 'user' ? { backgroundColor: theme.userBubble } : styles.aiBubble
       ]}>
         {item.role !== 'user' && (
-          <Text style={styles.assistantType}>EnergIA</Text>
+          <Text style={[styles.assistantType, { color: theme.assistantType }]}>EnergIA</Text>
         )}
         <Text style={[
           styles.messageText,
@@ -123,13 +130,17 @@ function ChatScreenContent() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerStyle: { backgroundColor: '#4CAF50' },
+          headerStyle: { backgroundColor: theme.header },
           headerTintColor: 'white',
           headerTitleAlign: 'center',
           headerTitle: () => (
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>EnergIA Chat</Text>
-              <Text style={{ fontSize: 12, color: 'white', opacity: 0.9 }}>Assistente de Eficiência Energética</Text>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'white' }}>
+                {isVolts ? 'Chat' : 'EnergIA Chat'}
+              </Text>
+              <Text style={{ fontSize: 12, color: 'white', opacity: 0.9 }}>
+                {isVolts ? 'Assistente Pessoal' : 'Assistente de Eficiência Energética'}
+              </Text>
             </View>
           ),
         }}
@@ -155,20 +166,22 @@ function ChatScreenContent() {
         {/* Loading indicator */}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#4CAF50" />
+            <ActivityIndicator size="small" color={theme.header} />
             <Text style={styles.loadingText}>EnergIA está pensando...</Text>
           </View>
         )}
 
-        {/* Icebreakers */}
-        <Icebreakers
-          icebreakers={icebreakers}
-          dicaDoDia={dicaDoDia}
-          isLoading={icebreakersLoading}
-          onIcebreakerPress={handleIcebreakerPress}
-          onRefresh={refreshIcebreakers}
-          shuffleTrigger={shuffleTrigger}
-        />
+        {/* Icebreakers - Only for Watts */}
+        {!isVolts && (
+          <Icebreakers
+            icebreakers={icebreakers}
+            dicaDoDia={dicaDoDia}
+            isLoading={icebreakersLoading}
+            onIcebreakerPress={handleIcebreakerPress}
+            onRefresh={refreshIcebreakers}
+            shuffleTrigger={shuffleTrigger}
+          />
+        )}
 
         {/* Input */}
         <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -184,6 +197,7 @@ function ChatScreenContent() {
           <TouchableOpacity
             style={[
               styles.sendButton,
+              { backgroundColor: (!inputText.trim() || isLoading) ? '#ccc' : theme.header },
               (!inputText.trim() || isLoading) && styles.sendButtonDisabled
             ]}
             onPress={handleSend}
@@ -247,7 +261,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   userBubble: {
-    backgroundColor: '#4CAF50',
+    // backgroundColor handled by style prop
+    borderRadius: 16,
+    padding: 12,
+    maxWidth: '80%',
   },
   aiBubble: {
     backgroundColor: 'white',
@@ -305,7 +322,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sendButton: {
-    backgroundColor: '#4CAF50',
+    // backgroundColor handled by inline style or if we want to change it here we can but it's hardcoded below.
+    // Let's use the theme in the render
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 20,

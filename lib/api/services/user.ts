@@ -1,5 +1,5 @@
 import apiClient from '../axios';
-import { ApiConfig, ApiResponse, User } from '../../types';
+import { ApiConfig, ApiResponse, User, NotificationResponse } from '../../types';
 
 export const userService = {
     /**
@@ -45,17 +45,46 @@ export const userService = {
                     }
                 }
 
+                // Extract UserID and Group from hidden metadata (New Backend feature)
+                // <div id="user-metadata" style="display:none;" data-userid="<%= userId %>" data-group="<%= group %>"></div>
+                let userId = 'dashboard-extracted';
+                let userGroup: 'Watts' | 'Volts' = 'Watts';
+
+                const metaMatch = html.match(/data-userid=["']([^"']+)["']/);
+                const groupMatch = html.match(/data-group=["'](Watts|Volts)["']/i);
+
+                if (metaMatch && metaMatch[1]) {
+                    userId = metaMatch[1];
+                    console.log('✅ userService: Extracted Real UserID:', userId);
+                }
+
+                if (groupMatch && groupMatch[1]) {
+                    userGroup = groupMatch[1] as 'Watts' | 'Volts';
+                    console.log('✅ userService: Extracted Group:', userGroup);
+                } else {
+                    // Fallback heuristic
+                    if (html.includes('dashboard_gen') || html.includes('Visualização Genérica')) {
+                        console.log('⚠️ userService: Group fallback heuristic triggered (Volts)');
+                        userGroup = 'Volts';
+                    } else {
+                        console.log('⚠️ userService: No group found, defaulting to Watts');
+                    }
+                }
+
                 // Extract Email
                 const emailMatch = html.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
                 if (emailMatch) {
                     userEmail = emailMatch[1];
                 }
 
+                console.log('🔍 userService: Final Parsed User:', { userId, userName, userGroup });
+
                 if (userName !== 'Usuário' || userEmail) {
                     return {
-                        id: 'dashboard-extracted', // Mock ID since we can't get it from HTML easily without more parsing
+                        id: userId,
                         name: userName,
-                        email: userEmail
+                        email: userEmail,
+                        group: userGroup
                     };
                 }
 
@@ -88,5 +117,27 @@ export const userService = {
             return response.data.message;
         }
         return '';
+    },
+
+    /**
+     * Get targeted notification for the user based on group
+     * GET /api/notification?userId={userId}
+     */
+    async getNotification(userId: string): Promise<string> {
+        try {
+            const response = await apiClient.get<NotificationResponse>(`/api/notification?userId=${userId}`);
+            if (response.data && response.data.notification) {
+                return response.data.notification;
+            }
+            return '';
+        } catch (error: any) {
+            // Silence 404s as they are expected if backend is not fully updated
+            if (error.status === 404 || (error.response && error.response.status === 404)) {
+                console.log('ℹ️ Notification API not available (404), using local fallback.');
+                return '';
+            }
+            console.warn('Failed to fetch notification:', error.message || error);
+            return '';
+        }
     }
 };

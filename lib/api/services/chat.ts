@@ -20,9 +20,10 @@ export const chatService = {
      * Send a new message to the chat
      * POST /chat/message
      */
-    async sendMessage(message: string): Promise<ChatResponse> {
+    async sendMessage(message: string, group?: 'Watts' | 'Volts'): Promise<ChatResponse> {
         try {
-            const response = await apiClient.post<any>('/chat/message', { message });
+            const endpoint = group === 'Volts' ? '/chat-gen/message' : '/chat/message';
+            const response = await apiClient.post<any>(endpoint, { message });
 
             // Handle SSE/Stream response format (Direct string response)
             // Cast to any because TS expects ApiResponse object but runtime might be string

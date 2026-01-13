@@ -63,7 +63,12 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    group: 'Watts' | 'Volts';
     preferences?: UserPreferences;
+}
+
+export interface NotificationResponse {
+    notification: string;
 }
 
 export interface UserPreferences {
