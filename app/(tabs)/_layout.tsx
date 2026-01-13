@@ -2,18 +2,24 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { AuthGuard } from '../../lib/auth/AuthGuard';
 
+import { useAuth } from '../../lib/auth/useAuth';
+
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const isVolts = user?.group === 'Volts';
+  const headerColor = isVolts ? '#64748B' : '#00A41B';
+
   return (
     <AuthGuard requireAuth={true}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#00A41B',
+          tabBarActiveTintColor: headerColor,
           tabBarInactiveTintColor: '#9CA3AF',
           tabBarStyle: {
             display: 'none',
           },
           headerStyle: {
-            backgroundColor: '#00A41B',
+            backgroundColor: headerColor,
           },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: {
