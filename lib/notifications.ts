@@ -95,7 +95,7 @@ export async function scheduleDailyNotificationAt(time: Time, options?: { title?
     } as any;
 
     const id = await n.scheduleNotificationAsync({ content, trigger });
-    // await AsyncStorage.setItem(STORAGE_KEY, id); // MODIFIED: We will manage IDs differently for batch
+    await AsyncStorage.setItem(STORAGE_KEY, id);
     console.log('Scheduled daily notification', id, time);
     return id;
   } catch (err) {
@@ -113,6 +113,7 @@ export async function scheduleToastNotifications(toasts: string[], time: Time = 
 
     // Cancel all previously scheduled notifications
     await n.cancelAllScheduledNotificationsAsync();
+    await AsyncStorage.removeItem(STORAGE_KEY);
     console.log('Cancelled all previous notifications');
 
     // Schedule up to 5 toasts for the next 5 days
