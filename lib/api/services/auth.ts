@@ -13,137 +13,129 @@ export const authService = {
      * POST /login
      */
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        // Use URLSearchParams for standard x-www-form-urlencoded submission
-        // This is more likely to be supported by the backend than FormData if Multer is not configured for /login
-        const params = new URLSearchParams();
-        params.append('email', credentials.email);
-        params.append('password', credentials.password);
-
-        console.log('🔐 authService.login: Sending URLSearchParams request via fetch...');
+        console.log('🔐 authService.login: Sending JSON request...');
 
         const config = apiClient.getConfig();
         const baseUrl = config.baseURL || 'https://chatenergia.com.br';
 
         try {
-            const response = await fetch(`${baseUrl}/login`, {
+            const response = await fetch(`${baseUrl}/api/login`, {
                 method: 'POST',
-                body: params.toString(), // Send as string
+                body: JSON.stringify(credentials),
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
                 credentials: 'include',
-                redirect: 'manual',
             });
 
             console.log('🔍 authService.login status:', response.status);
 
-            // Handle Redirection (301/302) or Success (200)
-            const isRedirect = response.status === 301 || response.status === 302;
-            const isSuccess = response.ok || isRedirect;
-
-            if (isSuccess) {
-                // Extract cookie from response headers
+            if (response.ok) {
+                // Extract cookie
                 const setCookie = response.headers.get('set-cookie');
                 let cookieString = '';
-
                 if (setCookie) {
-                    // Fetch headers.get combines multiple set-cookie values differently depending on implementation,
-                    // but usually we just look for connect.sid
                     cookieString = setCookie;
-                    // Simple extraction if multiple cookies are joined by comma (common in some fetch polyfills, though RN android might differ)
                     if (setCookie.includes('connect.sid')) {
                         const match = setCookie.match(/connect\.sid=[^;]+/);
                         if (match) cookieString = match[0];
                     }
                 }
-
-                // If it was a redirect, the body is likely empty or simple text
-                // If 200, it might be the dashboard HTML or JSON
-                const responseText = await response.text();
-                // console.log('📄 authService.login: Body length:', responseText.length); // Too noisy if HTML
                 console.log('🍪 authService.login: Cookie:', cookieString);
 
-                // Try to parse as JSON first (API might return JSON {success: true} for 200 OK)
-                try {
-                    // Check if it looks like JSON to avoid trying to parse huge HTML
-                    if (responseText.trim().startsWith('{')) {
-                        const json = JSON.parse(responseText);
-                        console.log('🔍 authService.login: Parsed JSON:', JSON.stringify(json).substring(0, 100)); // Log start
+                const data = await response.json();
 
-                        if (json.success || json.user) {
-                            console.log('✅ authService.login: JSON success detected');
-
-                            // Try to get user from JSON, or fallback
-                            const user = json.data?.user || json.user || { id: '1', email: credentials.email, name: 'Usuário' };
-
-                            return {
-                                tokens: json.data?.tokens || {
-                                    accessToken: 'session-cookie',
-                                    refreshToken: '',
-                                    expiresIn: 3600,
-                                    cookie: cookieString
-                                },
-                                user: user
-                            };
-                        }
-                    }
-                } catch (e) {
-                    // Not JSON, continue to HTML check
-                    console.log('⚠️ authService.login: JSON parse failed, assuming HTML');
-                }
-
-                // Extract user data from Dashboard HTML using shared parser
-                const { parseUserFromDashboardHtml } = await import('../../utils/htmlParser');
-                const { user, isAuthenticated } = parseUserFromDashboardHtml(responseText, credentials.email);
-
-                // If we got a redirect/success, assume we are logged in
-                // especially if we got a connect.sid cookie or valid redirect/greeting
-                const hasSession = cookieString.includes('connect.sid');
-                const validRedirect = isRedirect && response.headers.get('location');
-
-                if (hasSession || validRedirect || isAuthenticated) {
-                    return {
-                        tokens: {
-                            accessToken: 'session-cookie', // Mock, we rely on cookie
-                            refreshToken: '',
-                            expiresIn: 3600,
-                            cookie: cookieString
-                        },
-                        user: user || {
-                            id: '1',
-                            email: credentials.email,
-                            name: 'Usuário',
-                            group: 'Watts' // Fallback
-                        }
-                    };
-                }
-
-                console.log('❌ authService.login: Validation failed. HasSession:', hasSession, 'IsAuthenticated:', isAuthenticated);
-                if (responseText.length < 2000) {
-                    console.log('📄 Body (first 2000 chars):', responseText);
-                } else {
-                    console.log('📄 Body (first 2000 chars):', responseText.substring(0, 2000));
-                }
+                return {
+                    tokens: {
+                        accessToken: 'session-cookie',
+                        refreshToken: '',
+                        expiresIn: 3600,
+                        cookie: cookieString
+                    },
+                    user: data.user
+                };
             }
 
-            throw new Error('Login failed: Invalid response');
+            // Handle errors
+            let errorMessage = 'Login failed';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                // Ignore JSON parse error, use default message
+            }
+            throw new Error(errorMessage);
 
         } catch (error: any) {
-            console.error('💥 authService.login fetch error:', error);
+            console.error('💥 authService.login error:', error);
             throw new Error(error.message || 'Network request failed');
         }
     },
 
     /**
      * Register new user
-     * POST /register
+     * POST /api/register
      */
     async register(data: RegisterData): Promise<AuthResponse> {
-        const response = await apiClient.post<AuthResponse>('/register', data);
-        if (!response.success && !response.data) {
-            throw new Error(response.message || 'Registration failed');
+        console.log('📝 authService.register: Sending JSON request...');
+
+        const config = apiClient.getConfig();
+        const baseUrl = config.baseURL || 'https://chatenergia.com.br';
+
+        try {
+            const response = await fetch(`${baseUrl}/api/register`, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            console.log('🔍 authService.register status:', response.status);
+
+            if (response.ok || response.status === 201) {
+                // Extract cookie (auto-login)
+                const setCookie = response.headers.get('set-cookie');
+                let cookieString = '';
+                if (setCookie) {
+                    cookieString = setCookie;
+                    if (setCookie.includes('connect.sid')) {
+                        const match = setCookie.match(/connect\.sid=[^;]+/);
+                        if (match) cookieString = match[0];
+                    }
+                }
+                console.log('🍪 authService.register: Cookie:', cookieString);
+
+                const responseData = await response.json();
+
+                return {
+                    tokens: {
+                        accessToken: 'session-cookie',
+                        refreshToken: '',
+                        expiresIn: 3600,
+                        cookie: cookieString
+                    },
+                    user: responseData.user
+                };
+            }
+
+            // Handle errors
+            let errorMessage = 'Registration failed';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                // Ignore
+            }
+            throw new Error(errorMessage);
+
+        } catch (error: any) {
+            console.error('💥 authService.register error:', error);
+            throw new Error(error.message || 'Network request failed');
         }
-        return response.data as AuthResponse;
     },
 
     /**

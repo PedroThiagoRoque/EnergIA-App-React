@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import {
   View,
@@ -73,7 +73,7 @@ function ChatScreenContent() {
     }
   };
 
-  const handleIcebreakerPress = async (text: string) => {
+  const handleIcebreakerPress = useCallback(async (text: string) => {
     // Enviar mensagem diretamente sem preencher input
     try {
       await sendMessage(text);
@@ -83,7 +83,7 @@ function ChatScreenContent() {
         err instanceof Error ? err.message : 'Erro de conexão'
       );
     }
-  };
+  }, [sendMessage]);
 
   const formatMessage = (text: string | undefined | null) => {
     // Verificação de segurança

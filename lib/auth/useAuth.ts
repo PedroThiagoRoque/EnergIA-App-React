@@ -5,6 +5,7 @@ import { userService } from '../api/services/user';
 import type {
   User,
   LoginCredentials,
+  RegisterData, // Added RegisterData
 } from '../types';
 
 // Contexto de autenticação simplificado
@@ -14,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>; // Added register
   logout: () => Promise<void>;
 }
 
@@ -87,11 +89,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Register function
+  const register = useCallback(async (data: RegisterData) => {
+    console.log('📝 useAuth: Iniciando registro...');
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Call service
+      const response = await authService.register(data);
+
+      console.log('✅ useAuth: Registro bem-sucedido');
+
+      // Update state
+      setIsAuthenticated(true);
+      setUser(response.user);
+
+      // Redirect
+      router.replace('/(tabs)');
+
+    } catch (error: any) {
+      console.error('💥 useAuth: Erro no registro:', error);
+      setError(error.message || 'Falha ao realizar registro');
+      setIsAuthenticated(false);
+      setUser(null);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Logout
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-
       // Tentar fazer logout na API
       await authService.logout();
     } catch (error) {
@@ -119,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     error,
     login,
+    register, // Added register
     logout,
   };
 

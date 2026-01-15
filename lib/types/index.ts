@@ -39,6 +39,9 @@ export interface RegisterData {
     email: string;
     password: string;
     confirmPassword?: string;
+    ageRange: string;
+    gender: string;
+    vinculo: string;
 }
 
 export interface AuthTokens {

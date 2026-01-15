@@ -20,13 +20,13 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const { login, isLoading, error } = useAuth();
   const { errors, validateForm, clearErrors } = useLoginValidation();
 
   const handleLogin = async () => {
     console.log('🎯 LoginScreen: Botão ENTRAR pressionado - executando login unificado');
-    
+
     // Limpar erros anteriores
     clearErrors();
 
@@ -47,10 +47,10 @@ export default function LoginScreen() {
       // O erro já está sendo tratado pelo hook
       const errorMessage = error instanceof Error ? error.message : 'Erro no login';
       console.error('💥 LoginScreen: Erro no login unificado:', errorMessage);
-      
+
       // Mostrar erro mais amigável
       Alert.alert(
-        'Login não realizado', 
+        'Login não realizado',
         `${errorMessage}\n\nPor favor, verifique suas credenciais e tente novamente.`,
         [
           { text: 'OK' }
@@ -184,6 +184,15 @@ export default function LoginScreen() {
               <Text style={styles.footerText}>
                 Problemas para entrar?{' '}
                 <Text style={styles.footerLink}>Verifique sua conexão</Text>
+              </Text>
+              <Text style={[styles.footerText, { marginTop: 12 }]}>
+                Não tem uma conta?{' '}
+                <Text
+                  style={styles.footerLink}
+                  onPress={() => router.push('/(auth)/register')}
+                >
+                  Cadastre-se
+                </Text>
               </Text>
             </View>
           </View>
