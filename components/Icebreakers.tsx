@@ -17,7 +17,7 @@ export interface IcebreakersProps {
   isLoading?: boolean;
 }
 
-export function Icebreakers({
+export function IcebreakersComponent({
   icebreakers,
   dicaDoDia,
   isLoading,
@@ -87,6 +87,8 @@ export function Icebreakers({
     </View>
   );
 }
+
+export const Icebreakers = React.memo(IcebreakersComponent);
 
 const styles = StyleSheet.create({
   container: {
