@@ -175,7 +175,6 @@ function ChatScreenContent() {
         {!isVolts && (
           <Icebreakers
             icebreakers={icebreakers}
-            dicaDoDia={dicaDoDia}
             isLoading={icebreakersLoading}
             onIcebreakerPress={handleIcebreakerPress}
             onRefresh={refreshIcebreakers}

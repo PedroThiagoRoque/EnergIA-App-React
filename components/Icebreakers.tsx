@@ -78,7 +78,7 @@ export function IcebreakersComponent({
             accessibilityLabel={`Sugestão: ${suggestion}`}
             accessibilityHint="Toque para enviar esta mensagem"
           >
-            <Text style={styles.suggestionText} numberOfLines={2}>
+            <Text style={styles.suggestionText} numberOfLines={4}>
               {suggestion}
             </Text>
           </TouchableOpacity>
@@ -135,26 +135,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
+    width: '100%',
+    flexDirection: 'column',
+    alignItems: 'center',
     gap: 8,
-    flexWrap: 'wrap',
   },
   suggestionButton: {
+    width: '90%',
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    flex: 1,
-    minWidth: 100,
+    paddingVertical: 12,
   },
   suggestionText: {
     fontSize: 13,
     color: '#555',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 18,
   },
   icebreakerButton: {
     backgroundColor: '#f5f5f5',

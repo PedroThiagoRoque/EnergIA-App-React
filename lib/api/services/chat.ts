@@ -77,7 +77,7 @@ export const chatService = {
      */
     async getIcebreakers(): Promise<IcebreakersResponse> {
         try {
-            const response = await apiClient.get<IcebreakersResponse>('/chat/daily/icebreakers');
+            const response = await apiClient.get<any>('/chat/daily/icebreakers');
             if (response.success && response.data) {
                 return response.data as IcebreakersResponse;
             }
