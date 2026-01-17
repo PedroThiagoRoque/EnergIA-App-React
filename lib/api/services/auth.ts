@@ -50,7 +50,7 @@ export const authService = {
                     tokens: {
                         accessToken: 'session-cookie',
                         refreshToken: '',
-                        expiresIn: 3600,
+                        expiresIn: 2592000, // 30 dias
                         cookie: cookieString
                     },
                     user: data.user
@@ -115,7 +115,7 @@ export const authService = {
                     tokens: {
                         accessToken: 'session-cookie',
                         refreshToken: '',
-                        expiresIn: 3600,
+                        expiresIn: 2592000, // 30 dias
                         cookie: cookieString
                     },
                     user: responseData.user

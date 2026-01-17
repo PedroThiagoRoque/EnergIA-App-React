@@ -76,7 +76,14 @@ function ChatScreenContent() {
   const handleIcebreakerPress = useCallback(async (text: string) => {
     // Enviar mensagem diretamente sem preencher input
     try {
-      await sendMessage(text);
+      const sendPromise = sendMessage(text);
+
+      // Scroll para mostrar a mensagem enviada
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      await sendPromise;
     } catch (err) {
       Alert.alert(
         'Erro',
@@ -148,8 +155,8 @@ function ChatScreenContent() {
 
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={50}
       >
         {/* Messages */}
         <FlatList
@@ -159,7 +166,7 @@ function ChatScreenContent() {
           keyExtractor={item => item.id}
           style={styles.messagesList}
           contentContainerStyle={styles.messagesContent}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           onLayout={() => flatListRef.current?.scrollToEnd()}
         />
 

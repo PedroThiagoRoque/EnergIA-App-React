@@ -13,16 +13,17 @@ import {
     Modal,
     FlatList,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../lib/auth/useAuth';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 const VINCULO_OPTIONS = ['Estudante', 'Técnico Administrativo', 'Docente', 'Tercerizado', 'Outro'];
-const GENDER_OPTIONS = ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'];
+const GENDER_OPTIONS = ['Masculino', 'Feminino', 'Não binário', 'Prefiro não dizer'];
 const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 export default function RegisterScreen() {
+    const insets = useSafeAreaInsets();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -116,7 +117,7 @@ export default function RegisterScreen() {
                 onRequestClose={() => setModalType(null)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>{title}</Text>
                             <TouchableOpacity onPress={() => setModalType(null)}>

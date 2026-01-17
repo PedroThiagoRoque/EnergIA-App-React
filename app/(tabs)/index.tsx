@@ -129,23 +129,7 @@ export default function DashboardScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Quick Tips Carousel placeholder (optional, keeps functionality light) */}
-        <View style={styles.tipsSection}>
-          <Text style={styles.sectionTitle}>{isVolts ? 'Para você' : 'Destaque do dia'}</Text>
-          <View style={styles.tipCard}>
-            <Ionicons
-              name={isVolts ? "notifications-outline" : "bulb-outline"}
-              size={24}
-              color={isVolts ? "#64748B" : "#FBC02D"}
-              style={{ marginBottom: 8 }}
-            />
-            <Text style={styles.tipText}>
-              {notification || (isVolts
-                ? 'Olá! Estou aqui para conversar e ajudar no que precisar.'
-                : 'Desligar aparelhos da tomada quando não estiverem em uso evita o consumo "vampiro".')}
-            </Text>
-          </View>
-        </View>
+
       </View>
     </View>
   );
