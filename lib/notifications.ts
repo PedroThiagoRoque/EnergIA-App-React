@@ -30,6 +30,39 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEY = 'dailyNotificationId';
 const ANDROID_CHANNEL_ID = 'daily-reminder';
 
+const VOLTS_MESSAGES = [
+  "Olá! Vamos conversar um pouco?",
+  "Oi! Se precisar de algo, estou aqui.",
+  "Passando para dar um oi!",
+  "Como está sendo seu dia?",
+  "Precisa de alguma informação rápida?",
+  "Estou disponível para um bate-papo.",
+  "Quer trocar uma ideia?",
+  "Se tiver dúvidas, é só chamar.",
+  "Olá! Como posso ajudar hoje?",
+  "Oi! Estou por aqui se precisar.",
+  "Que tal conversarmos um pouco?",
+  "Estou pronto para ajudar.",
+  "Olá! Tudo tranquilo por aí?",
+  "Oi! Tem algum tópico em mente?",
+  "Posso ajudar em algo?",
+  "Estou à disposição para conversar.",
+  "Oi! Vamos bater um papo?",
+  "Se quiser conversar, estou online.",
+  "Olá! O que manda hoje?",
+  "Oi! Estou ouvindo.",
+  "Precisa de ajuda com algo?",
+  "Vamos conversar?",
+  "Estou aqui para o que precisar.",
+  "Olá! Como você está?",
+  "Oi! Alguma dúvida hoje?",
+  "Estou pronto para ouvir você.",
+  "Quer falar sobre algum assunto?",
+  "Olá! Estou à disposição.",
+  "Oi! Pode contar comigo.",
+  "Vamos falar sobre o que você quiser."
+];
+
 type Time = { hour: number; minute: number };
 
 async function ensureAndroidChannel() {
@@ -143,6 +176,53 @@ export async function scheduleToastNotifications(toasts: string[], time: Time = 
 
   } catch (err) {
     console.log('Failed to schedule toast batch:', err);
+  }
+}
+
+export async function scheduleVoltsDailyNotifications(time: Time = { hour: 9, minute: 0 }) {
+  try {
+    const n = await ensureNotifications();
+    if (!n) return;
+
+    await ensureAndroidChannel();
+
+    // Cancel all previously scheduled notifications
+    await n.cancelAllScheduledNotificationsAsync();
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    console.log('Cancelled all previous notifications (Volts)');
+
+    // Schedule 5 days of messages
+    for (let i = 0; i < 5; i++) {
+      // Calculate trigger date: Today + (i + 1) days
+      const triggerDate = new Date();
+      triggerDate.setDate(triggerDate.getDate() + (i + 1));
+      triggerDate.setHours(time.hour, time.minute, 0, 0);
+
+      // Calculate Day of Year for message selection (consistent with backend)
+      const start = new Date(triggerDate.getFullYear(), 0, 0);
+      const diff = triggerDate.getTime() - start.getTime();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const dayOfYear = Math.floor(diff / oneDay);
+
+      const index = dayOfYear % VOLTS_MESSAGES.length;
+      const message = VOLTS_MESSAGES[index];
+
+      const content = {
+        title: 'Olá!',
+        body: message,
+        sound: 'default' as any,
+      };
+
+      const trigger = {
+        date: triggerDate,
+      } as any;
+
+      await n.scheduleNotificationAsync({ content, trigger });
+      console.log(`Scheduled Volts toast for ${triggerDate.toISOString()}: ${message}`);
+    }
+
+  } catch (err) {
+    console.log('Failed to schedule Volts batch:', err);
   }
 }
 
